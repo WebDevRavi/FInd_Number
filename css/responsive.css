@@ -1,0 +1,802 @@
+/**
+ * Find the Number - Responsive & Orientation Layouts
+ * Master Spec Section 102-108, Mobile Enhancement Matrix (320px to 1024px)
+ * Designed for mobile phones (portrait & landscape), tablets, and desktop regression safety.
+ */
+
+/* ==================== 1. DEFAULT DESKTOP BASE (>= 1025px) ==================== */
+.mobile-top-hud {
+  display: none;
+}
+
+.mobile-hud-target-badge,
+.mobile-hud-time {
+  font-family: var(--font-numbers);
+}
+
+/* ==================== 2. TABLET LAYOUT (768px - 1024px) ==================== */
+@media (min-width: 769px) and (max-width: 1024px) and (min-height: 521px) {
+  .home-game-title {
+    font-size: 3rem;
+  }
+
+  .difficulty-cards-row {
+    gap: 16px;
+  }
+
+  .difficulty-card {
+    padding: 18px 14px;
+  }
+
+  .gameplay-hud-sidebar {
+    width: 230px;
+    padding: 12px 8px;
+  }
+
+  .hud-target-number-box span {
+    font-size: 2.8rem;
+  }
+
+  .board-number .number-text {
+    font-size: 1.3rem;
+  }
+}
+
+/* ==================== 3. MOBILE GENERAL OVERRIDES (< 950px, portrait, or short landscape <= 520px) ==================== */
+@media (max-width: 950px), (orientation: portrait), (max-height: 520px) {
+  #game-root {
+    padding: calc(var(--safe-top) + 4px) calc(var(--safe-right) + 6px) calc(var(--safe-bottom) + 4px) calc(var(--safe-left) + 6px);
+  }
+
+  .decor-note {
+    display: none; /* Remove perimeter editorial notes on mobile screens to maximize screen real estate */
+  }
+
+  /* Header adjustments: only gameplay header is replaced by mobile HUD */
+  #screen-gameplay .screen-header {
+    display: none;
+  }
+
+  #screen-difficulty .screen-header,
+  #screen-results .screen-header {
+    display: flex;
+    padding: 6px 10px;
+    height: auto;
+    width: 100%;
+  }
+
+  .gameplay-hud-sidebar {
+    display: none; /* Desktop sidebar hidden on mobile */
+  }
+
+  .gameplay-body {
+    flex-direction: column;
+    height: 100%;
+    padding: 4px 6px;
+    gap: 6px;
+  }
+
+  /* Compact Mobile Top HUD Bar */
+  .mobile-top-hud {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 48px;
+    min-height: 48px;
+    padding: 2px 10px;
+    background-color: var(--card-bg);
+    border: 1.5px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    z-index: 25;
+  }
+
+  .mobile-hud-time {
+    font-family: var(--font-numbers);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    min-width: 60px;
+  }
+
+  .mobile-hud-target-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-title);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .mobile-hud-target-badge {
+    background-color: var(--color-easy-bg);
+    border: 1.5px solid var(--color-easy);
+    color: var(--text-main);
+    border-radius: 4px;
+    padding: 1px 9px;
+    font-family: var(--font-numbers);
+    font-size: 1.35rem;
+    font-weight: 800;
+  }
+
+  .mobile-hud-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .mobile-hud-actions .btn-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 0.95rem;
+  }
+
+  .mobile-hud-actions .btn-hud-hint-mobile {
+    height: 38px;
+    padding: 0 8px;
+    font-size: 0.76rem;
+    gap: 5px;
+  }
+
+  /* Board fills remaining viewport area without scrolling */
+  .board-wrapper {
+    width: 100%;
+    height: calc(100% - 54px);
+    max-height: none;
+    max-width: 100%;
+  }
+
+  .number-board {
+    height: 100%;
+    max-height: 100%;
+  }
+
+  /* Mobile Board Number Scaling & Spacing (Clean, non-overlapping tap targets) */
+  .board-number {
+    width: 32px;
+    height: 32px;
+  }
+
+  .board-number .number-text {
+    font-size: 0.95rem;
+  }
+
+  .number-hit-target {
+    top: 50%;
+    left: 50%;
+    width: 38px;
+    height: 38px;
+    transform: translate(-50%, -50%);
+  }
+
+  .found-circle-svg {
+    width: 42px;
+    height: 42px;
+  }
+
+  .board-number.is-hint-spotlight::before {
+    width: 42px;
+    height: 42px;
+  }
+
+  .target-circle-svg {
+    width: 54px;
+    height: 54px;
+  }
+
+  /* How to Play Graphic Modal Mobile */
+  .modal-dialog-how-to-play {
+    padding: 8px 8px 12px;
+    max-width: 95vw;
+    max-height: 94vh;
+  }
+
+  .how-to-play-image-wrap {
+    margin-bottom: 8px;
+  }
+}
+
+/* ==================== 4. MOBILE PORTRAIT SPECIFICS ==================== */
+@media (orientation: portrait) {
+  /* Home Screen in Portrait */
+  .home-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(12px, 3vh, 26px);
+    margin: auto;
+    width: 100%;
+    padding: 8px 12px;
+  }
+
+  .home-logo-img {
+    max-width: 280px;
+    max-height: clamp(110px, 22vh, 180px);
+    width: 82%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .home-menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1.8vh, 14px);
+    width: 88%;
+    max-width: 270px;
+  }
+
+  .home-menu-buttons button {
+    padding: clamp(10px, 1.8vh, 13px) 16px;
+    font-size: 1rem;
+  }
+
+  /* Difficulty Screen in Portrait */
+  .difficulty-container {
+    padding: 6px 12px;
+  }
+
+  .difficulty-cards-row {
+    grid-template-columns: 1fr;
+    gap: clamp(6px, 1.5vh, 10px);
+    overflow: hidden;
+    padding: 2px;
+  }
+
+  .difficulty-card {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 10px 12px;
+    text-align: left;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .difficulty-card-badge {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+    padding: 3px 8px;
+    min-width: 72px;
+    text-align: center;
+  }
+
+  .difficulty-card-body {
+    align-items: flex-start;
+  }
+
+  .difficulty-card-rule {
+    font-size: 0.88rem;
+    min-height: auto;
+    margin-bottom: 2px;
+    text-align: left;
+    justify-content: flex-start;
+  }
+
+  .difficulty-preview {
+    display: none; /* Hidden on compact mobile row */
+  }
+
+  .difficulty-card-desc {
+    margin-bottom: 0;
+    font-size: 0.72rem;
+  }
+
+  .difficulty-card .btn-difficulty-select {
+    width: auto;
+    padding: 6px 12px;
+    font-size: 0.88rem;
+    white-space: nowrap;
+  }
+
+  /* Results Screen in Portrait: Compact & fits without scrolling */
+  .results-container {
+    padding: clamp(6px, 2vh, 16px) 12px;
+    max-width: 440px;
+    gap: 6px;
+    margin: auto;
+  }
+
+  .results-hero {
+    margin-bottom: clamp(4px, 1.5vh, 14px);
+  }
+
+  .results-trophy-wrap {
+    margin-bottom: 4px;
+  }
+
+  .results-trophy-img {
+    width: clamp(68px, 14vh, 105px);
+  }
+
+  .results-title {
+    font-size: clamp(1.35rem, 4.2vw, 1.8rem);
+    margin-bottom: 2px;
+  }
+
+  .results-subtitle {
+    font-size: clamp(0.75rem, 2vw, 0.9rem);
+  }
+
+  .results-card-main {
+    padding: clamp(8px, 1.5vh, 14px);
+    gap: 8px;
+    margin-bottom: clamp(4px, 1vh, 10px);
+  }
+
+  .stat-value {
+    font-size: clamp(1.2rem, 3.5vw, 1.5rem);
+  }
+
+  .results-card-secondary {
+    grid-template-columns: repeat(3, 1fr);
+    padding: clamp(8px, 1.4vh, 14px);
+    gap: 10px;
+    margin-bottom: clamp(6px, 1.5vh, 12px);
+  }
+
+  .results-card-secondary .stat-label {
+    font-size: 0.64rem;
+  }
+
+  .results-card-secondary .stat-value {
+    font-size: 1rem;
+  }
+
+  .results-actions {
+    flex-direction: row;
+    width: 100%;
+    gap: 6px;
+  }
+
+  .results-actions button {
+    flex: 1;
+    padding: clamp(8px, 1.5vh, 12px) 6px;
+    font-size: clamp(0.78rem, 2.5vw, 0.92rem);
+    white-space: nowrap;
+  }
+}
+
+/* ==================== 5. MOBILE LANDSCAPE SPECIFICS (<= 520px height) ==================== */
+@media (orientation: landscape) and (max-height: 520px) {
+  /* Home Screen in Landscape: Two-column balanced layout */
+  .home-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(12px, 3vw, 28px);
+    margin: auto;
+    width: 100%;
+    max-width: 520px;
+    padding: 2px 8px;
+  }
+
+  .home-title-wrapper {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0;
+  }
+
+  .home-logo-img {
+    max-height: clamp(85px, 42vh, 150px);
+    max-width: clamp(150px, 30vw, 220px);
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .home-menu-buttons {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(4px, 1.2vh, 8px);
+    width: clamp(140px, 28vw, 190px);
+  }
+
+  .home-menu-buttons button {
+    padding: clamp(5px, 1.3vh, 8px) 10px;
+    font-size: 0.84rem;
+  }
+
+  /* Header in Landscape: compact */
+  .screen-header {
+    padding: 4px 12px;
+  }
+
+  .header-main-title {
+    font-size: 1.05rem;
+  }
+
+  .header-subtitle {
+    display: none;
+  }
+
+  .header-actions .btn-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 0.9rem;
+  }
+
+  .header-actions .btn-icon .menu-icon-img {
+    width: 19px;
+    height: 19px;
+  }
+
+  /* Difficulty Screen in Landscape: 3 Cards side-by-side */
+  .difficulty-container {
+    padding: 2px 10px;
+    max-width: 860px;
+  }
+
+  .difficulty-header {
+    margin-bottom: 6px;
+  }
+
+  .difficulty-main-title {
+    font-size: 1.2rem;
+    margin-bottom: 2px;
+  }
+
+  .difficulty-cards-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    max-height: calc(100vh - 80px);
+    overflow-y: visible;
+    padding: 2px;
+    width: 100%;
+  }
+
+  .difficulty-card {
+    flex-direction: column;
+    padding: 8px 6px;
+    justify-content: space-between;
+    text-align: center;
+    gap: 4px;
+  }
+
+  .difficulty-card-badge {
+    font-size: 0.85rem;
+    padding: 2px 6px;
+    margin-bottom: 2px;
+  }
+
+  .difficulty-card-body {
+    align-items: center;
+    gap: 2px;
+  }
+
+  .difficulty-card-rule {
+    font-size: 0.78rem;
+    min-height: 2.2em;
+    margin-bottom: 2px;
+    text-align: center;
+    line-height: 1.15;
+  }
+
+  .difficulty-preview {
+    display: none;
+  }
+
+  .difficulty-card-desc {
+    font-size: 0.68rem;
+    line-height: 1.15;
+    margin-bottom: 2px;
+  }
+
+  .difficulty-card .btn-difficulty-select {
+    width: 100%;
+    padding: 5px 8px;
+    font-size: 0.82rem;
+    margin-top: 2px;
+  }
+
+  /* Settings Modal in Landscape: Fits without scrolling */
+  .settings-sheet {
+    max-height: 96vh;
+    width: 94vw;
+    max-width: 530px;
+    padding: 6px 14px 6px;
+    overflow: hidden;
+  }
+
+  .settings-header {
+    margin-bottom: 2px;
+  }
+
+  .settings-header .modal-title {
+    font-size: 1.05rem;
+    margin-bottom: 1px;
+  }
+
+  .settings-header .modal-subtitle {
+    display: none;
+  }
+
+  .settings-divider {
+    margin: 2px 0 4px;
+  }
+
+  .settings-sheet {
+    display: flex;
+    flex-direction: column;
+    max-width: clamp(440px, 68vw, 540px);
+  }
+
+  .settings-sections-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 12px;
+    align-items: start;
+    width: 100%;
+  }
+
+  .settings-section {
+    margin-bottom: 2px;
+  }
+
+  .settings-section-title {
+    font-size: 0.65rem;
+    margin-bottom: 2px;
+  }
+
+  .settings-row {
+    padding: 2px 0;
+    gap: 4px;
+  }
+
+  .settings-row-label {
+    font-size: 0.73rem;
+  }
+
+  .segment-btn {
+    padding: 2px 7px;
+    font-size: 0.74rem;
+  }
+
+  .settings-row-slider {
+    margin-top: 1px;
+  }
+
+  .slider-container {
+    gap: 6px;
+    width: 100%;
+  }
+
+  .slider-container input[type="range"] {
+    height: 4px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .settings-footer {
+    margin-top: 4px;
+  }
+
+  .settings-footer button {
+    padding: 5px 12px;
+    font-size: 0.82rem;
+  }
+
+  /* Results Screen in Landscape: Fits without scrolling */
+  .results-container {
+    max-width: 720px;
+    padding: 2px 8px;
+    gap: 4px;
+    margin: auto;
+  }
+
+  .results-hero {
+    margin-bottom: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .results-trophy-wrap {
+    margin-bottom: 0;
+  }
+
+  .results-trophy-img {
+    width: clamp(46px, 12vh, 64px);
+    filter: drop-shadow(0 4px 10px rgba(212, 175, 55, 0.4));
+  }
+
+  .results-title {
+    font-size: 1.3rem;
+    margin-bottom: 0;
+  }
+
+  .results-subtitle {
+    display: none;
+  }
+
+  .results-hero .header-subtitle {
+    display: none;
+  }
+
+  .results-card-main {
+    padding: 4px 8px;
+    gap: 6px;
+    margin-bottom: 3px;
+  }
+
+  .results-card-main .stat-label {
+    font-size: 0.65rem;
+  }
+
+  .results-card-main .stat-value {
+    font-size: 1.2rem;
+  }
+
+  .results-card-secondary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding: 4px 12px;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .results-card-secondary .stat-label {
+    font-size: 0.62rem;
+  }
+
+  .results-card-secondary .stat-value {
+    font-size: 1.05rem;
+  }
+
+  .results-actions {
+    flex-direction: row;
+    gap: 8px;
+    width: auto;
+    margin-top: 1px;
+  }
+
+  .results-actions button {
+    width: auto;
+    min-width: 105px;
+    padding: 5px 12px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  .results-actions button .btn-inline-icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+  }
+
+  /* Pause Modal in Landscape */
+  .modal-dialog {
+    padding: 12px 18px;
+    max-width: 360px;
+  }
+
+  .modal-title {
+    font-size: 1.25rem;
+    margin-bottom: 2px;
+  }
+
+  .modal-subtitle {
+    font-size: 0.76rem;
+    margin-bottom: 10px;
+  }
+
+  .modal-button-stack {
+    gap: 6px;
+  }
+
+  .modal-button-stack button {
+    padding: 7px 14px;
+    font-size: 0.9rem;
+  }
+
+  /* Compact Countdown in Landscape Mobile */
+  .countdown-stage {
+    gap: 8px;
+    transform: scale(0.85);
+  }
+
+  .countdown-portal {
+    width: clamp(105px, 28vh, 135px);
+    height: clamp(105px, 28vh, 135px);
+  }
+
+  .countdown-text {
+    font-size: clamp(2.6rem, 20vh, 3.6rem);
+  }
+
+  .countdown-stage.is-go .countdown-text {
+    font-size: clamp(2.2rem, 16vh, 3rem);
+  }
+
+  /* Leaderboard Modal in Landscape: Side-by-side cards, zero scroll */
+  #modal-leaderboard .modal-dialog {
+    max-width: 520px;
+    padding: 8px 14px 10px;
+    max-height: 96vh;
+    overflow: hidden;
+  }
+
+  #modal-leaderboard .modal-title {
+    font-size: 1.05rem;
+    margin-bottom: 1px;
+  }
+
+  #modal-leaderboard .modal-subtitle {
+    display: none;
+  }
+
+  #modal-leaderboard .modal-dialog > div[style*="flex-direction: column"] {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+  }
+
+  #modal-leaderboard .modal-dialog > div[style*="flex-direction: column"] > div {
+    flex-direction: column !important;
+    text-align: center !important;
+    padding: 6px 4px !important;
+    gap: 2px !important;
+  }
+
+  #modal-leaderboard .modal-dialog > div[style*="flex-direction: column"] > div > div:first-child {
+    font-size: 0.72rem;
+  }
+
+  #modal-leaderboard .modal-dialog > div[style*="flex-direction: column"] > div [id^="stat-best-"] {
+    font-size: 1.05rem !important;
+  }
+
+  #modal-leaderboard button.btn-modal-close {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .mobile-hud-actions .btn-hud-hint-mobile .mobile-hint-label {
+    display: none;
+  }
+  .mobile-hud-actions .btn-hud-hint-mobile {
+    padding: 0 6px;
+    gap: 4px;
+  }
+}
+
+/* Extra-compact screens (width <= 380px or height <= 620px in portrait) */
+@media (max-width: 380px) and (orientation: portrait), (max-height: 620px) and (orientation: portrait) {
+  .board-number {
+    width: 28px;
+    height: 28px;
+  }
+
+  .board-number .number-text {
+    font-size: 0.85rem;
+  }
+
+  .number-hit-target {
+    width: 34px;
+    height: 34px;
+  }
+
+  .found-circle-svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .board-number.is-hint-spotlight::before {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+

@@ -1,0 +1,21 @@
+# Build artifacts & packages
+dist/
+*.zip
+node_modules/
+
+# Internal specs, chat logs, & design docs
+FIND_THE_NUMBER_CRAZYGAMES_FINAL_MASTER_SPEC.md
+*.spec.md
+assets/
+
+# Backup & temporary files
+*.bak
+*.bak.*
+*.tmp
+*.log
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
