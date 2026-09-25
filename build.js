@@ -71,12 +71,21 @@ if (fs.existsSync(zipPath)) {
 
 try {
   console.log('Creating production ZIP archive...');
-  // Use single quotes inside PowerShell for robust path handling with spaces
-  const psCmd = `Compress-Archive -Path '${distDir}\\*' -DestinationPath '${zipPath}' -Force`;
-  execSync(`powershell -NoProfile -Command "${psCmd}"`, { stdio: 'inherit' });
-  console.log(`✓ Generated: ${zipPath}`);
+  if (process.platform === 'win32') {
+    const psCmd = `Compress-Archive -Path '${distDir}\\*' -DestinationPath '${zipPath}' -Force`;
+    execSync(`powershell -NoProfile -Command "${psCmd}"`, { stdio: 'inherit' });
+    console.log(`✓ Generated: ${zipPath}`);
+  } else {
+    // Linux / Mac / CI environments (Vercel)
+    try {
+      execSync(`zip -rq "${zipPath}" .`, { cwd: distDir, stdio: 'ignore' });
+      console.log(`✓ Generated: ${zipPath}`);
+    } catch {
+      console.log('ℹ Zip command not available on host; skipping optional zip archive generation.');
+    }
+  }
 } catch (e) {
-  console.error('Failed to create zip with Compress-Archive:', e);
+  console.warn('ℹ Skipped zip generation:', e.message);
 }
 
 console.log('--- Production Build Complete! ---');

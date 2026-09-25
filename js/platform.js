@@ -14,11 +14,18 @@ class PlatformAdapter {
     this.roomJoinListeners = [];
   }
 
+  _withTimeout(promise, ms = 2000, errorMsg = 'Operation timed out') {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error(errorMsg)), ms))
+    ]);
+  }
+
   async init() {
     try {
       if (typeof window !== 'undefined' && window.CrazyGames && window.CrazyGames.SDK) {
         this.sdk = window.CrazyGames.SDK;
-        await this.sdk.init();
+        await this._withTimeout(this.sdk.init(), 2000, 'CrazyGames SDK init timed out (fallback to offline/standalone mode)');
         this.isSDKAvailable = true;
         console.log('[Platform] CrazyGames SDK v3 initialized successfully.');
         this.loadingStart();
@@ -236,7 +243,7 @@ class PlatformAdapter {
   async getUser() {
     try {
       if (this.isSDKAvailable && this.sdk?.user?.getUser) {
-        return await this.sdk.user.getUser();
+        return await this._withTimeout(this.sdk.user.getUser(), 1500, 'getUser timed out');
       }
     } catch (e) {
       console.warn('[Platform] getUser failed:', e);
@@ -332,7 +339,7 @@ class PlatformAdapter {
   async getItem(key) {
     try {
       if (this.isSDKAvailable && this.sdk?.data?.getItem) {
-        return await this.sdk.data.getItem(key);
+        return await this._withTimeout(this.sdk.data.getItem(key), 1500, 'data.getItem timed out');
       }
     } catch (e) {
       console.warn('[Platform] data.getItem failed:', e);

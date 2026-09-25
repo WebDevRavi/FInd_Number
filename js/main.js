@@ -733,8 +733,8 @@ class GameApp {
   }
 }
 
-// Bootstrap once DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+// Bootstrap once DOM is ready (handles both early and deferred loading on CDNs/Vercel)
+function bootGame() {
   const app = new GameApp();
   window.gameApp = app;
   window.gameState = gameState;
@@ -744,5 +744,11 @@ document.addEventListener('DOMContentLoaded', () => {
   window.platform = platform;
   window.CONFIG = CONFIG;
   app.init();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootGame);
+} else {
+  bootGame();
+}
 
