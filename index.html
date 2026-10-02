@@ -33,9 +33,23 @@
       <div class="decor-note decor-bottom-left">NUMBERS<br>SHARPEN<br>FOCUS</div>
       <div class="decor-note decor-bottom-right">Good Luck ! ☺</div>
 
-      <!-- Quick Action Buttons (Top-Right) -->
+      <!-- Quick Action Buttons & Player Profile Header -->
       <div class="screen-header">
-        <div class="header-title-group"></div>
+        <div class="header-profile-group">
+          <div id="player-profile-chip" class="player-profile-chip" role="button" tabindex="0" title="CrazyGames Profile & Cloud Save">
+            <div class="profile-avatar-box">
+              <img id="profile-avatar-img" class="profile-avatar-img" alt="Avatar" style="display: none;" />
+              <span id="profile-avatar-fallback" class="profile-avatar-fallback">👤</span>
+            </div>
+            <div class="profile-details">
+              <div class="profile-name-row">
+                <span id="profile-username" class="profile-username">Guest Player</span>
+                <span id="profile-country-badge" class="profile-country-badge" style="display: none;"></span>
+              </div>
+              <span id="profile-status" class="profile-status"><span id="profile-status-dot" class="status-dot is-guest"></span><span id="profile-status-text">CrazyGames</span></span>
+            </div>
+          </div>
+        </div>
         <div class="header-actions">
           <button id="btn-quick-mute" class="btn-icon" aria-label="Toggle Sound" title="Sound">
             <img src="img/icon-audio.png" alt="Sound" class="menu-icon-img" />
@@ -468,6 +482,26 @@
         <p class="modal-subtitle">Fastest completion times recorded locally & via CrazyGames Data.</p>
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; text-align: left;">
+          <!-- CrazyGames Player Account & Cloud Save Status -->
+          <div id="modal-profile-card" class="modal-profile-card">
+            <div class="modal-profile-left">
+              <div class="modal-avatar-box">
+                <img id="modal-avatar-img" class="profile-avatar-img" alt="Avatar" style="display: none;" />
+                <span id="modal-avatar-fallback" class="profile-avatar-fallback">👤</span>
+              </div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <strong id="modal-username" style="font-size: 0.92rem; color: var(--text-main);">Guest Player</strong>
+                  <span id="modal-country-badge" class="profile-country-badge" style="display: none;"></span>
+                </div>
+                <div id="modal-profile-status" style="font-size: 0.74rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-top: 2px;">
+                  <span id="modal-status-dot" class="status-dot is-guest"></span> <span id="modal-status-text">Playing as Guest (Local Save)</span>
+                </div>
+              </div>
+            </div>
+            <button id="btn-profile-auth" class="btn-profile-auth" style="display: none;" title="Sign in to sync stats with CrazyGames">Sign In</button>
+          </div>
+
           <!-- Campaign Progress -->
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(245, 158, 11, 0.08); border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.35);">
             <div>

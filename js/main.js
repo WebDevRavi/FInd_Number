@@ -80,7 +80,13 @@ class GameApp {
     // 7. Populate Home Screen UI with progression & daily challenge
     await this.updateHomeUI();
 
-    // 8. Stop platform loading & Show Home Screen
+    // 8. Initialize CrazyGames Player Profile & Auth Listener
+    this.initCrazyGamesUser();
+    platform.addAuthListener((user) => {
+      this.applyCrazyGamesUser(user);
+    });
+
+    // 9. Stop platform loading & Show Home Screen
     platform.loadingStop();
     this.showScreen('screen-home');
   }
@@ -113,6 +119,24 @@ class GameApp {
     this.dom.btnHomeCampaign = document.getElementById('btn-home-campaign');
     this.dom.homeStarsCount = document.getElementById('home-stars-count');
     this.dom.btnHomeClassic = document.getElementById('btn-home-classic');
+
+    // CrazyGames Player Profile elements
+    this.dom.profileChip = document.getElementById('player-profile-chip');
+    this.dom.profileAvatarImg = document.getElementById('profile-avatar-img');
+    this.dom.profileAvatarFallback = document.getElementById('profile-avatar-fallback');
+    this.dom.profileUsername = document.getElementById('profile-username');
+    this.dom.profileCountryBadge = document.getElementById('profile-country-badge');
+    this.dom.profileStatusDot = document.getElementById('profile-status-dot');
+    this.dom.profileStatusText = document.getElementById('profile-status-text');
+
+    this.dom.modalProfileCard = document.getElementById('modal-profile-card');
+    this.dom.modalAvatarImg = document.getElementById('modal-avatar-img');
+    this.dom.modalAvatarFallback = document.getElementById('modal-avatar-fallback');
+    this.dom.modalUsername = document.getElementById('modal-username');
+    this.dom.modalCountryBadge = document.getElementById('modal-country-badge');
+    this.dom.modalStatusDot = document.getElementById('modal-status-dot');
+    this.dom.modalStatusText = document.getElementById('modal-status-text');
+    this.dom.btnProfileAuth = document.getElementById('btn-profile-auth');
 
     // Campaign Levels screen
     this.dom.btnLevelsBack = document.getElementById('btn-levels-back');
@@ -253,6 +277,25 @@ class GameApp {
 
     this.dom.btnHomeClassic?.addEventListener('click', () => {
       this.showScreen('screen-difficulty');
+    });
+
+    // Player Profile Chip click (opens stats & profile modal)
+    this.dom.profileChip?.addEventListener('click', () => {
+      audio.playClick();
+      this.openStatsModal();
+    });
+
+    // Profile auth prompt button
+    this.dom.btnProfileAuth?.addEventListener('click', async () => {
+      audio.playClick();
+      try {
+        const user = await platform.showAuthPrompt();
+        if (user) {
+          this.applyCrazyGamesUser(user);
+        }
+      } catch (err) {
+        console.warn('[User] Auth prompt error:', err);
+      }
     });
 
     this.dom.btnLevelsBack?.addEventListener('click', () => {
@@ -605,7 +648,97 @@ class GameApp {
       console.warn('Error loading daily stats:', e);
     }
 
+    // Refresh CrazyGames user profile card
+    this.applyCrazyGamesUser(this.currentUser);
+
     this.openModal('leaderboard');
+  }
+
+  async initCrazyGamesUser() {
+    try {
+      const user = await platform.getUser();
+      this.applyCrazyGamesUser(user);
+    } catch (e) {
+      console.warn('[User] Failed to fetch CrazyGames user profile:', e);
+      this.applyCrazyGamesUser(null);
+    }
+  }
+
+  applyCrazyGamesUser(user) {
+    this.currentUser = user;
+    const isAuth = Boolean(user && user.username);
+
+    // 1. Header Profile Chip
+    if (this.dom.profileUsername) {
+      this.dom.profileUsername.textContent = isAuth ? user.username : 'Guest Player';
+    }
+
+    if (this.dom.profileAvatarImg && this.dom.profileAvatarFallback) {
+      if (isAuth && user.avatarUrl) {
+        this.dom.profileAvatarImg.src = user.avatarUrl;
+        this.dom.profileAvatarImg.style.display = 'block';
+        this.dom.profileAvatarFallback.style.display = 'none';
+      } else {
+        this.dom.profileAvatarImg.style.display = 'none';
+        this.dom.profileAvatarFallback.style.display = 'block';
+      }
+    }
+
+    if (this.dom.profileCountryBadge) {
+      if (isAuth && user.countryCode) {
+        this.dom.profileCountryBadge.textContent = user.countryCode;
+        this.dom.profileCountryBadge.style.display = 'inline-block';
+      } else {
+        this.dom.profileCountryBadge.style.display = 'none';
+      }
+    }
+
+    if (this.dom.profileStatusDot) {
+      this.dom.profileStatusDot.className = isAuth ? 'status-dot' : 'status-dot is-guest';
+    }
+
+    if (this.dom.profileStatusText) {
+      this.dom.profileStatusText.textContent = isAuth ? 'CrazyGames ✓' : 'CrazyGames';
+    }
+
+    // 2. Modal Profile Card
+    if (this.dom.modalUsername) {
+      this.dom.modalUsername.textContent = isAuth ? user.username : 'Guest Player';
+    }
+
+    if (this.dom.modalAvatarImg && this.dom.modalAvatarFallback) {
+      if (isAuth && user.avatarUrl) {
+        this.dom.modalAvatarImg.src = user.avatarUrl;
+        this.dom.modalAvatarImg.style.display = 'block';
+        this.dom.modalAvatarFallback.style.display = 'none';
+      } else {
+        this.dom.modalAvatarImg.style.display = 'none';
+        this.dom.modalAvatarFallback.style.display = 'block';
+      }
+    }
+
+    if (this.dom.modalCountryBadge) {
+      if (isAuth && user.countryCode) {
+        this.dom.modalCountryBadge.textContent = user.countryCode;
+        this.dom.modalCountryBadge.style.display = 'inline-block';
+      } else {
+        this.dom.modalCountryBadge.style.display = 'none';
+      }
+    }
+
+    if (this.dom.modalStatusDot) {
+      this.dom.modalStatusDot.className = isAuth ? 'status-dot' : 'status-dot is-guest';
+    }
+
+    if (this.dom.modalStatusText) {
+      this.dom.modalStatusText.textContent = isAuth 
+        ? 'Connected to CrazyGames (Cloud Synced ✓)'
+        : 'Playing as Guest (Local Save)';
+    }
+
+    if (this.dom.btnProfileAuth) {
+      this.dom.btnProfileAuth.style.display = (!isAuth && platform.isSDKAvailable) ? 'block' : 'none';
+    }
   }
 
   async updateHomeUI() {

@@ -850,4 +850,23 @@
   }
 }
 
+/* Player profile chip responsive rules */
+@media (max-width: 480px) {
+  .player-profile-chip {
+    padding: 3px 8px 3px 4px;
+    gap: 6px;
+  }
+  .player-profile-chip .profile-status {
+    display: none;
+  }
+  .player-profile-chip .profile-username {
+    max-width: 75px;
+    font-size: 0.76rem;
+  }
+  .player-profile-chip .profile-avatar-box {
+    width: 24px;
+    height: 24px;
+  }
+}
+
 

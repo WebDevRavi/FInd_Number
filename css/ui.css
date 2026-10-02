@@ -1601,3 +1601,163 @@ button:focus-visible, .btn:focus-visible {
   0%, 100% { opacity: 0.85; }
   50% { opacity: 1; transform: scale(1.02); }
 }
+
+/* ==================== CRAZYGAMES PLAYER PROFILE ==================== */
+.header-profile-group {
+  display: flex;
+  align-items: center;
+}
+
+.player-profile-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 5px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 140ms ease;
+  user-select: none;
+}
+
+.player-profile-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.player-profile-chip:active {
+  transform: translateY(1px);
+}
+
+.profile-avatar-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1.5px solid var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.profile-avatar-fallback {
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.15;
+}
+
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.profile-username {
+  font-family: var(--font-title);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-main);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-country-badge {
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  color: var(--text-muted);
+  font-family: var(--font-numbers);
+  font-weight: 700;
+}
+
+.profile-status {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  display: inline-block;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.status-dot.is-guest {
+  background: var(--text-muted);
+  box-shadow: none;
+}
+
+/* Modal Profile Card */
+.modal-profile-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(16, 185, 129, 0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  margin-bottom: 4px;
+}
+
+.modal-profile-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-avatar-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.25);
+  border: 2px solid #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-profile-auth {
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 4px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 120ms ease;
+  font-family: var(--font-serif);
+}
+
+.btn-profile-auth:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+

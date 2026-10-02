@@ -29,13 +29,20 @@ Built with pure vanilla HTML5, CSS3, and modern ES Modules with **zero runtime d
 - **Record Fanfare**: Breaking a personal best triggers an arpeggiated major-chord audio fanfare and displays an emerald-pulsing `NEW BEST!` badge.
 - **Combo Multipliers**: Sequential taps within 1.2s build a combo counter accompanied by rising pitch audio notes.
 
-### 4. Comprehensive Personal Bests & Stats Modal
+### 4. CrazyGames Player Profile & Cloud Sync Integration
+- **Live Platform Identity**: Directly queries `window.CrazyGames.SDK.user.getUser()` to show the player's authentic CrazyGames avatar, username, and country code badge on the menu header and stats modal.
+- **Dynamic Auth Listener**: Listens to `addAuthListener` for instant login updates without page reloads.
+- **Cloud Progress Indicator**: Reassures players that campaign stars, high scores, and daily streaks are securely synced with CrazyGames Cloud Data.
+- **Guest Mode Fallback**: Provides a gentle, non-intrusive "Sign In" option (`showAuthPrompt()`) for guest players.
+
+### 5. Comprehensive Personal Bests & Stats Modal
 - Live stats modal tracking:
+  - **Player Account & Cloud Status**: Displays profile info and sync indicator.
   - **Campaign Stars**: Total stars earned (e.g., `15 / 60 ⭐`) and current highest unlocked stage.
   - **Daily Streak**: Current active streak and today's completion status.
   - **Classic Bests**: Formatted personal records across Easy (1–20), Medium (1–50), and Hard (1–100).
 
-### 5. CrazyGames SDK v3 Integration
+### 6. CrazyGames SDK v3 Full Lifecycle Compliance
 - Seamless lifecycle management:
   - `gameplayStart()` called on first tile tap or countdown complete.
   - `gameplayStop()` called on round completion or pause.
