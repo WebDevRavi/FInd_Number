@@ -176,6 +176,57 @@
     height: 42px;
   }
 
+  /* Mobile Dynamic Sizing Overrides */
+  .number-board.count-tiny .board-number {
+    width: 52px;
+    height: 52px;
+  }
+  .number-board.count-tiny .board-number .number-text {
+    font-size: 1.7rem;
+    font-weight: 800;
+  }
+  .number-board.count-tiny .number-hit-target {
+    width: 62px;
+    height: 62px;
+  }
+  .number-board.count-tiny .found-circle-svg {
+    width: 64px;
+    height: 64px;
+  }
+
+  .number-board.count-small .board-number {
+    width: 44px;
+    height: 44px;
+  }
+  .number-board.count-small .board-number .number-text {
+    font-size: 1.35rem;
+    font-weight: 800;
+  }
+  .number-board.count-small .number-hit-target {
+    width: 52px;
+    height: 52px;
+  }
+  .number-board.count-small .found-circle-svg {
+    width: 54px;
+    height: 54px;
+  }
+
+  .number-board.count-medium .board-number {
+    width: 36px;
+    height: 36px;
+  }
+  .number-board.count-medium .board-number .number-text {
+    font-size: 1.1rem;
+  }
+  .number-board.count-medium .number-hit-target {
+    width: 44px;
+    height: 44px;
+  }
+  .number-board.count-medium .found-circle-svg {
+    width: 46px;
+    height: 46px;
+  }
+
   .board-number.is-hint-spotlight::before {
     width: 42px;
     height: 42px;

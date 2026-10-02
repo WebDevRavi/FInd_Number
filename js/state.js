@@ -17,7 +17,10 @@ export const GameStatus = {
 class GameState {
   constructor() {
     this.status = GameStatus.HOME;
+    this.gameMode = 'classic'; // 'classic' | 'campaign' | 'daily'
     this.difficulty = 'medium';
+    this.currentLevel = 1;
+    this.totalNumbers = 100;
     this.targetNumber = 1;
     this.clicksTotal = 0;
     this.clicksCorrect = 0;
@@ -25,6 +28,12 @@ class GameState {
     this.hintsRemaining = CONFIG.HINTS_PER_ROUND || 3;
     this.theme = CONFIG.DEFAULT_THEME || 'dark';
     this.soundEnabled = true;
+
+    // Combo streak tracking
+    this.combo = 0;
+    this.lastFindTime = 0;
+    this.maxCombo = 0;
+
     this.listeners = new Set();
   }
 
@@ -59,14 +68,34 @@ class GameState {
     this.notify('soundChange', enabled);
   }
 
-  resetRound(difficulty = 'medium') {
-    this.difficulty = difficulty;
+  resetRound(options = {}) {
+    if (typeof options === 'string') {
+      this.difficulty = options;
+      this.gameMode = 'classic';
+      this.totalNumbers = CONFIG.DIFFICULTIES[options]?.totalNumbers || 100;
+    } else {
+      this.difficulty = options.difficulty || 'medium';
+      this.gameMode = options.gameMode || 'classic';
+      this.currentLevel = options.level || 1;
+      this.totalNumbers = options.totalNumbers || (CONFIG.DIFFICULTIES[this.difficulty]?.totalNumbers || 100);
+    }
+
     this.targetNumber = 1;
     this.clicksTotal = 0;
     this.clicksCorrect = 0;
     this.shufflesCount = 0;
     this.hintsRemaining = CONFIG.HINTS_PER_ROUND || 3;
-    this.notify('roundReset', { difficulty, hintsRemaining: this.hintsRemaining });
+    this.combo = 0;
+    this.lastFindTime = 0;
+    this.maxCombo = 0;
+
+    this.notify('roundReset', {
+      difficulty: this.difficulty,
+      gameMode: this.gameMode,
+      level: this.currentLevel,
+      totalNumbers: this.totalNumbers,
+      hintsRemaining: this.hintsRemaining
+    });
   }
 
   useHint() {
@@ -88,17 +117,34 @@ class GameState {
       const foundNumber = this.targetNumber;
       this.targetNumber++;
 
+      // Compute Combo Streak (if found within 3.0s of previous find)
+      const now = performance.now();
+      if (this.lastFindTime > 0 && (now - this.lastFindTime) < 3000) {
+        this.combo++;
+      } else {
+        this.combo = 1;
+      }
+      this.lastFindTime = now;
+      if (this.combo > this.maxCombo) {
+        this.maxCombo = this.combo;
+      }
+
+      const isCompleted = this.targetNumber > this.totalNumbers;
+
       this.notify('numberFound', {
         foundNumber,
         nextTarget: this.targetNumber,
-        isCompleted: this.targetNumber > 100
+        isCompleted,
+        combo: this.combo,
+        totalNumbers: this.totalNumbers
       });
 
-      if (this.targetNumber > 100) {
+      if (isCompleted) {
         this.setStatus(GameStatus.COMPLETED);
       }
     } else {
-      // Wrong click: strictly zero penalty, zero feedback per Locked Rule 4.
+      // Wrong click: reset combo streak
+      this.combo = 0;
       this.notify('wrongClick', { clickedValue });
     }
 

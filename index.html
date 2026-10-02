@@ -74,10 +74,33 @@
         </div>
 
         <div class="home-menu-buttons">
-          <button id="btn-home-play" class="btn-primary" aria-label="Play Game">Play →</button>
-          <button id="btn-home-how" class="btn-secondary" aria-label="How to Play">How to Play</button>
-          <button id="btn-home-stats" class="btn-secondary" aria-label="Leaderboard">Leaderboard</button>
-          <button id="btn-home-settings" class="btn-secondary" aria-label="Settings">Settings</button>
+          <button id="btn-home-quickplay" class="btn-primary btn-hero-play" aria-label="Play Next Level">
+            <span class="btn-hero-icon">▶</span>
+            <span class="btn-hero-text">
+              <span class="btn-hero-main" id="btn-hero-label">PLAY LEVEL 1</span>
+              <span class="btn-hero-sub" id="btn-hero-sub">Warm Up · 10 Numbers</span>
+            </span>
+          </button>
+
+          <button id="btn-home-daily" class="btn-secondary btn-daily-card" aria-label="Daily Challenge">
+            <div class="btn-daily-content">
+              <span class="daily-flame">🔥</span>
+              <div class="daily-meta">
+                <span class="daily-title">DAILY CHALLENGE</span>
+                <span class="daily-status" id="home-daily-status">Ready to Play</span>
+              </div>
+            </div>
+            <span id="home-daily-badge" class="badge-streak">STREAK: 0</span>
+          </button>
+
+          <button id="btn-home-campaign" class="btn-secondary btn-campaign-card" aria-label="Campaign Levels">
+            <span>⭐ CAMPAIGN (1–20)</span>
+            <span id="home-stars-count" class="badge-stars">0 / 60 ⭐</span>
+          </button>
+
+          <button id="btn-home-classic" class="btn-secondary" aria-label="Classic Modes">
+            <span>CLASSIC MODES (1–100)</span>
+          </button>
         </div>
       </div>
     </section>
@@ -154,6 +177,27 @@
       </div>
     </section>
 
+    <!-- ==================== 2B. CAMPAIGN LEVELS SCREEN ==================== -->
+    <section id="screen-levels" class="game-screen" aria-label="Campaign Level Select Screen">
+      <div class="screen-header">
+        <button id="btn-levels-back" class="btn-secondary" aria-label="Back to Home">← Back</button>
+        <div class="header-title-group">
+          <div class="header-main-title">CAMPAIGN LEVELS</div>
+          <div class="header-subtitle">FIND NUMBERS · EARN STARS · MASTER FOCUS</div>
+        </div>
+        <div class="header-stars-badge" id="levels-header-stars">⭐ 0 / 60</div>
+      </div>
+
+      <div class="levels-container">
+        <div class="levels-header-summary">
+          <div class="levels-summary-text">Complete levels quickly to earn up to 3 stars per stage!</div>
+        </div>
+        <div class="levels-grid" id="levels-grid-container">
+          <!-- 20 Level cards generated dynamically by main.js -->
+        </div>
+      </div>
+    </section>
+
 
     <!-- ==================== 3. GAMEPLAY SCREEN ==================== -->
     <section id="screen-gameplay" class="game-screen" aria-label="Gameplay Screen">
@@ -173,6 +217,7 @@
         <div class="mobile-hud-target-group">
           <span>FIND</span>
           <div class="mobile-hud-target-badge" id="mobile-hud-target">1</div>
+          <span id="mobile-hud-star-goal" class="hud-star-goal" style="display: none;">3★ &lt; 22s</span>
         </div>
         <div class="mobile-hud-actions">
           <button id="btn-mobile-hint" class="btn-hud-hint-mobile" aria-label="Use Hint" title="Highlight current target">
@@ -185,10 +230,11 @@
       </div>
 
       <div class="gameplay-body">
-        <!-- 100-Number Board Wrapper -->
+        <!-- Dynamic Number Board Wrapper -->
         <div class="board-wrapper">
-          <div id="number-board" class="number-board" aria-label="Number Board containing 100 numbers">
-            <!-- 100 Numbers & Organic SVG target circle generated dynamically -->
+          <div id="combo-banner" class="combo-badge-banner" aria-hidden="true">2x COMBO! 🔥</div>
+          <div id="number-board" class="number-board" aria-label="Number Board containing dynamic numbers">
+            <!-- Numbers & Organic SVG target circle generated dynamically -->
           </div>
         </div>
 
@@ -226,6 +272,7 @@
           <div class="hud-section hud-difficulty-section">
             <div class="hud-stat-title">DIFFICULTY</div>
             <div id="hud-difficulty-badge" class="badge-difficulty badge-medium">MEDIUM</div>
+            <div id="hud-star-goal" class="hud-star-goal" style="display: none;">3★ &lt; 00:22</div>
           </div>
 
           <div class="hud-motto-box">
@@ -241,6 +288,7 @@
 
     <!-- ==================== 4. RESULTS / WIN SCREEN ==================== -->
     <section id="screen-results" class="game-screen" aria-label="Results Screen">
+      <canvas id="confetti-canvas" style="display: none;"></canvas>
       <div class="screen-header">
         <button id="btn-results-home" class="btn-secondary" aria-label="Return Home">← Home</button>
         <div class="header-title-group">
@@ -255,8 +303,16 @@
           <div class="results-trophy-wrap">
             <img src="img/win trophy.png" alt="Victory Trophy" class="results-trophy-img" width="105" height="98" />
           </div>
-          <h2 class="results-title">WELL DONE!</h2>
-          <p class="results-subtitle">YOU FOUND ALL 100 NUMBERS!</p>
+          <div id="results-stars-container" class="results-stars-row" aria-label="Star Rating">
+            <span class="res-star star-1" id="res-star-1">★</span>
+            <span class="res-star star-2" id="res-star-2">★</span>
+            <span class="res-star star-3" id="res-star-3">★</span>
+          </div>
+          <h2 class="results-title" id="results-title">WELL DONE!</h2>
+          <p class="results-subtitle" id="results-subtitle">YOU FOUND ALL NUMBERS!</p>
+          <div id="results-daily-banner" class="results-daily-banner" style="display: none;">
+            🔥 DAY 1 STREAK COMPLETED! COME BACK TOMORROW FOR DAY 2!
+          </div>
         </div>
 
         <!-- Primary Stats Card -->
@@ -266,8 +322,8 @@
             <span id="res-time" class="stat-value">00:00</span>
           </div>
           <div class="stat-block">
-            <span class="stat-label">DIFFICULTY</span>
-            <div id="res-difficulty" class="badge-difficulty badge-medium" style="margin-top: 6px;">MEDIUM</div>
+            <span class="stat-label" id="res-mode-label">STAGE</span>
+            <div id="res-difficulty" class="badge-difficulty badge-medium" style="margin-top: 6px;">LEVEL 1</div>
           </div>
           <div class="stat-block">
             <span class="stat-label">BEST TIME</span>
@@ -280,26 +336,24 @@
         <div class="results-card-secondary">
           <div class="stat-block">
             <span class="stat-label">NUMBERS FOUND</span>
-            <span id="res-found" class="stat-value">100 / 100</span>
+            <span id="res-found" class="stat-value">10 / 10</span>
+          </div>
+          <div class="stat-block">
+            <span class="stat-label">MAX COMBO</span>
+            <span id="res-combo" class="stat-value">x1</span>
           </div>
           <div class="stat-block">
             <span class="stat-label">HINTS USED</span>
             <span id="res-hints" class="stat-value">0</span>
           </div>
-          <div class="stat-block">
-            <span class="stat-label">SHUFFLES</span>
-            <span id="res-shuffles" class="stat-value">—</span>
-          </div>
         </div>
 
         <!-- Action Buttons -->
         <div class="results-actions">
-          <button id="btn-results-play-again" class="btn-secondary" aria-label="Play Again">↻ Play Again</button>
-          <button id="btn-results-new-game" class="btn-primary" aria-label="New Game">New Game →</button>
-          <button id="btn-results-leaderboard" class="btn-secondary" aria-label="View Leaderboard">
-            <img src="img/icon-stats.png" alt="" class="btn-inline-icon" aria-hidden="true" />
-            <span>Leaderboard</span>
-          </button>
+          <button id="btn-results-next" class="btn-primary" aria-label="Next Level">Next Level →</button>
+          <button id="btn-results-play-again" class="btn-secondary" aria-label="Play Again">↻ Replay</button>
+          <button id="btn-results-levels" class="btn-secondary" aria-label="Campaign Levels">⭐ Levels</button>
+          <button id="btn-results-leaderboard" class="btn-secondary" aria-label="View Leaderboard">Stats</button>
         </div>
       </div>
     </section>

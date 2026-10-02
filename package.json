@@ -1,6 +1,6 @@
 {
   "name": "find-the-number",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Find the Number - Tactical Number Search Game for CrazyGames",
   "type": "module",
   "scripts": {

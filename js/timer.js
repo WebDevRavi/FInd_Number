@@ -97,4 +97,20 @@ export class GameTimer {
 
     this.rafId = requestAnimationFrame(() => this.loop());
   }
+
+  static format(sec) {
+    return formatSeconds(sec);
+  }
+
+  static formatSeconds(sec) {
+    return formatSeconds(sec);
+  }
+}
+
+export function formatSeconds(sec) {
+  if (sec === null || sec === undefined || isNaN(sec) || sec <= 0) return '--:--';
+  const totalSec = Math.floor(sec);
+  const minutes = Math.floor(totalSec / 60);
+  const seconds = totalSec % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }

@@ -12,6 +12,14 @@ import { GameTimer } from './timer.js';
 import { BoardManager } from './board.js';
 import { gameState, GameStatus } from './state.js';
 
+const formatSeconds = (sec) => {
+  if (sec === null || sec === undefined || isNaN(sec) || sec <= 0) return '--:--';
+  const totalSec = Math.floor(sec);
+  const minutes = Math.floor(totalSec / 60);
+  const seconds = totalSec % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
+
 class GameApp {
   constructor() {
     this.dom = {};
@@ -69,7 +77,10 @@ class GameApp {
     this.bindEvents();
     this.subscribeState();
 
-    // 7. Stop platform loading & Show Home Screen
+    // 7. Populate Home Screen UI with progression & daily challenge
+    await this.updateHomeUI();
+
+    // 8. Stop platform loading & Show Home Screen
     platform.loadingStop();
     this.showScreen('screen-home');
   }
@@ -79,6 +90,7 @@ class GameApp {
     this.dom.screens = {
       home: document.getElementById('screen-home'),
       difficulty: document.getElementById('screen-difficulty'),
+      levels: document.getElementById('screen-levels'),
       gameplay: document.getElementById('screen-gameplay'),
       results: document.getElementById('screen-results')
     };
@@ -91,6 +103,22 @@ class GameApp {
       leaderboard: document.getElementById('modal-leaderboard')
     };
 
+    // Home Screen elements
+    this.dom.btnHomeQuickPlay = document.getElementById('btn-home-quickplay');
+    this.dom.btnHeroLabel = document.getElementById('btn-hero-label');
+    this.dom.btnHeroSub = document.getElementById('btn-hero-sub');
+    this.dom.btnHomeDaily = document.getElementById('btn-home-daily');
+    this.dom.homeDailyStatus = document.getElementById('home-daily-status');
+    this.dom.homeDailyBadge = document.getElementById('home-daily-badge');
+    this.dom.btnHomeCampaign = document.getElementById('btn-home-campaign');
+    this.dom.homeStarsCount = document.getElementById('home-stars-count');
+    this.dom.btnHomeClassic = document.getElementById('btn-home-classic');
+
+    // Campaign Levels screen
+    this.dom.btnLevelsBack = document.getElementById('btn-levels-back');
+    this.dom.levelsHeaderStars = document.getElementById('levels-header-stars');
+    this.dom.levelsGridContainer = document.getElementById('levels-grid-container');
+
     // Countdown Overlay
     this.dom.countdownOverlay = document.getElementById('countdown-overlay');
     this.dom.countdownStage = this.dom.countdownOverlay ? this.dom.countdownOverlay.querySelector('.countdown-stage') : null;
@@ -99,28 +127,41 @@ class GameApp {
     this.dom.countdownText = document.getElementById('countdown-text');
     this.dom.countdownHint = document.getElementById('countdown-hint');
 
-    // Board
+    // Board & Combo Banner
     this.dom.boardContainer = document.getElementById('number-board');
+    this.dom.comboBanner = document.getElementById('combo-banner');
 
     // HUD Elements
     this.dom.hudTarget = document.getElementById('hud-target-number');
     this.dom.hudTime = document.getElementById('hud-time');
     this.dom.hudFound = document.getElementById('hud-found');
     this.dom.hudDifficultyBadge = document.getElementById('hud-difficulty-badge');
+    this.dom.hudStarGoal = document.getElementById('hud-star-goal');
 
     // Mobile HUD Elements
     this.dom.mobileHudTime = document.getElementById('mobile-hud-time');
     this.dom.mobileHudTarget = document.getElementById('mobile-hud-target');
+    this.dom.mobileHudStarGoal = document.getElementById('mobile-hud-star-goal');
     this.dom.btnMobilePause = document.getElementById('btn-mobile-pause');
 
     // Results Elements
     this.dom.resTime = document.getElementById('res-time');
     this.dom.resBestTime = document.getElementById('res-best-time');
     this.dom.resDifficulty = document.getElementById('res-difficulty');
+    this.dom.resModeLabel = document.getElementById('res-mode-label');
     this.dom.resNewBestBadge = document.getElementById('res-new-best-badge');
     this.dom.resFound = document.getElementById('res-found');
+    this.dom.resCombo = document.getElementById('res-combo');
     this.dom.resHints = document.getElementById('res-hints');
-    this.dom.resShuffles = document.getElementById('res-shuffles');
+    this.dom.resStars = [
+      document.getElementById('res-star-1'),
+      document.getElementById('res-star-2'),
+      document.getElementById('res-star-3')
+    ];
+    this.dom.resDailyBanner = document.getElementById('results-daily-banner');
+    this.dom.btnResultsNext = document.getElementById('btn-results-next');
+    this.dom.btnResultsLevels = document.getElementById('btn-results-levels');
+    this.dom.confettiCanvas = document.getElementById('confetti-canvas');
 
     // Settings UI Elements
     this.dom.btnThemeDark = document.getElementById('btn-theme-dark');
@@ -183,8 +224,40 @@ class GameApp {
     });
 
     // Home Screen buttons
-    document.getElementById('btn-home-play')?.addEventListener('click', () => {
+    this.dom.btnHomeQuickPlay?.addEventListener('click', async () => {
+      const progress = await storage.getCampaignProgress();
+      const lvl = progress.unlockedLevel || 1;
+      const levelDef = CONFIG.CAMPAIGN_LEVELS[lvl - 1] || CONFIG.CAMPAIGN_LEVELS[0];
+      this.startCountdown({
+        gameMode: 'campaign',
+        level: levelDef.level,
+        totalNumbers: levelDef.totalNumbers,
+        shuffle: levelDef.shuffle,
+        rotate: levelDef.rotate
+      });
+    });
+
+    this.dom.btnHomeDaily?.addEventListener('click', async () => {
+      this.startCountdown({
+        gameMode: 'daily',
+        totalNumbers: CONFIG.DAILY_CHALLENGE.totalNumbers,
+        shuffle: CONFIG.DAILY_CHALLENGE.shuffle,
+        rotate: CONFIG.DAILY_CHALLENGE.rotate
+      });
+    });
+
+    this.dom.btnHomeCampaign?.addEventListener('click', () => {
+      this.renderCampaignLevelsScreen();
+      this.showScreen('screen-levels');
+    });
+
+    this.dom.btnHomeClassic?.addEventListener('click', () => {
       this.showScreen('screen-difficulty');
+    });
+
+    this.dom.btnLevelsBack?.addEventListener('click', () => {
+      this.updateHomeUI();
+      this.showScreen('screen-home');
     });
 
     document.getElementById('btn-home-how')?.addEventListener('click', () => {
@@ -240,6 +313,7 @@ class GameApp {
     });
 
     document.getElementById('btn-diff-back')?.addEventListener('click', () => {
+      this.updateHomeUI();
       this.showScreen('screen-home');
     });
 
@@ -272,7 +346,7 @@ class GameApp {
 
     document.getElementById('btn-pause-restart')?.addEventListener('click', () => {
       this.closeModals();
-      this.startCountdown(gameState.difficulty);
+      this.restartCurrentRound();
     });
 
     document.getElementById('btn-pause-home')?.addEventListener('click', () => {
@@ -280,12 +354,32 @@ class GameApp {
     });
 
     // Results Screen actions
-    document.getElementById('btn-results-play-again')?.addEventListener('click', () => {
-      this.startCountdown(gameState.difficulty);
+    this.dom.btnResultsNext?.addEventListener('click', async () => {
+      if (gameState.gameMode === 'campaign') {
+        const nextLevelNum = gameState.currentLevel + 1;
+        const nextDef = CONFIG.CAMPAIGN_LEVELS[nextLevelNum - 1];
+        if (nextDef) {
+          this.startCountdown({
+            gameMode: 'campaign',
+            level: nextDef.level,
+            totalNumbers: nextDef.totalNumbers,
+            shuffle: nextDef.shuffle,
+            rotate: nextDef.rotate
+          });
+          return;
+        }
+      }
+      this.updateHomeUI();
+      this.showScreen('screen-home');
     });
 
-    document.getElementById('btn-results-new-game')?.addEventListener('click', () => {
-      this.showScreen('screen-difficulty');
+    this.dom.btnResultsLevels?.addEventListener('click', () => {
+      this.renderCampaignLevelsScreen();
+      this.showScreen('screen-levels');
+    });
+
+    document.getElementById('btn-results-play-again')?.addEventListener('click', () => {
+      this.restartCurrentRound();
     });
 
     document.getElementById('btn-results-leaderboard')?.addEventListener('click', () => {
@@ -293,6 +387,7 @@ class GameApp {
     });
 
     document.getElementById('btn-results-home')?.addEventListener('click', () => {
+      this.updateHomeUI();
       this.showScreen('screen-home');
     });
 
@@ -479,92 +574,216 @@ class GameApp {
     this.openModal('leaderboard');
   }
 
-  startCountdown(difficulty) {
-    gameState.resetRound(difficulty);
+  async updateHomeUI() {
+    const progress = await storage.getCampaignProgress();
+    const unlocked = progress.unlockedLevel || 1;
+    const currentDef = CONFIG.CAMPAIGN_LEVELS[unlocked - 1] || CONFIG.CAMPAIGN_LEVELS[0];
+
+    if (this.dom.btnHeroLabel) {
+      this.dom.btnHeroLabel.textContent = `PLAY LEVEL ${currentDef.level}`;
+    }
+    if (this.dom.btnHeroSub) {
+      this.dom.btnHeroSub.textContent = `${currentDef.name} · ${currentDef.totalNumbers} Numbers`;
+    }
+
+    let totalStars = 0;
+    Object.values(progress.stars || {}).forEach(s => {
+      totalStars += Number(s) || 0;
+    });
+    const maxStars = (CONFIG.CAMPAIGN_LEVELS?.length || 20) * 3;
+
+    if (this.dom.homeStarsCount) {
+      this.dom.homeStarsCount.textContent = `${totalStars} / ${maxStars} ⭐`;
+    }
+    if (this.dom.levelsHeaderStars) {
+      this.dom.levelsHeaderStars.textContent = `⭐ ${totalStars} / ${maxStars}`;
+    }
+
+    // Daily Challenge status
+    const daily = await storage.getDailyStatus();
+    if (this.dom.homeDailyBadge) {
+      this.dom.homeDailyBadge.textContent = `STREAK: ${daily.streak}`;
+    }
+    if (this.dom.homeDailyStatus) {
+      this.dom.homeDailyStatus.textContent = daily.completedToday ? 'Completed Today! ✓' : 'Ready to Play';
+    }
+  }
+
+  async renderCampaignLevelsScreen() {
+    if (!this.dom.levelsGridContainer) return;
+    const progress = await storage.getCampaignProgress();
+    const unlockedLevel = progress.unlockedLevel || 1;
+    const starsMap = progress.stars || {};
+    const bestTimesMap = progress.bestTimes || {};
+
+    this.dom.levelsGridContainer.innerHTML = '';
+
+    CONFIG.CAMPAIGN_LEVELS.forEach(levelDef => {
+      const isUnlocked = levelDef.level <= unlockedLevel;
+      const starsEarned = starsMap[levelDef.level] || 0;
+      const bestSec = bestTimesMap[levelDef.level];
+
+      const card = document.createElement('div');
+      card.className = `level-card ${isUnlocked ? '' : 'is-locked'}`;
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', isUnlocked ? '0' : '-1');
+      card.setAttribute('aria-label', `Level ${levelDef.level}: ${levelDef.name}`);
+
+      card.innerHTML = `
+        <div class="level-card-number">${levelDef.level}</div>
+        <div class="level-card-target">1–${levelDef.totalNumbers}</div>
+        <div class="level-card-name">${levelDef.name}</div>
+        ${isUnlocked ? `
+          <div class="level-card-stars">
+            <span class="star-glyph ${starsEarned >= 1 ? 'active' : ''}">★</span>
+            <span class="star-glyph ${starsEarned >= 2 ? 'active' : ''}">★</span>
+            <span class="star-glyph ${starsEarned >= 3 ? 'active' : ''}">★</span>
+          </div>
+          <div class="level-card-best">${bestSec ? `⏱ ${formatSeconds(bestSec)}` : `3★ < ${levelDef.stars[0]}s`}</div>
+        ` : `
+          <div class="level-card-lock">🔒</div>
+        `}
+      `;
+
+      if (isUnlocked) {
+        card.addEventListener('click', () => {
+          this.startCountdown({
+            gameMode: 'campaign',
+            level: levelDef.level,
+            totalNumbers: levelDef.totalNumbers,
+            shuffle: levelDef.shuffle,
+            rotate: levelDef.rotate
+          });
+        });
+      }
+
+      this.dom.levelsGridContainer.appendChild(card);
+    });
+  }
+
+  restartCurrentRound() {
+    if (gameState.gameMode === 'campaign') {
+      const levelDef = CONFIG.CAMPAIGN_LEVELS[gameState.currentLevel - 1] || CONFIG.CAMPAIGN_LEVELS[0];
+      this.startCountdown({
+        gameMode: 'campaign',
+        level: levelDef.level,
+        totalNumbers: levelDef.totalNumbers,
+        shuffle: levelDef.shuffle,
+        rotate: levelDef.rotate
+      });
+    } else if (gameState.gameMode === 'daily') {
+      this.startCountdown({
+        gameMode: 'daily',
+        totalNumbers: CONFIG.DAILY_CHALLENGE.totalNumbers,
+        shuffle: CONFIG.DAILY_CHALLENGE.shuffle,
+        rotate: CONFIG.DAILY_CHALLENGE.rotate
+      });
+    } else {
+      this.startCountdown(gameState.difficulty);
+    }
+  }
+
+  startCountdown(options = 'medium') {
+    gameState.resetRound(options);
     gameState.setStatus(GameStatus.COUNTDOWN);
     this.timer.reset();
     this.showScreen('screen-gameplay');
     this.closeModals();
 
-    // Prepare board (reset found states and layout)
+    // Prepare board (reset found states, dynamic totalNumbers, and layout)
     this.board.cancelAnimation();
-    this.board.setupNewGame(difficulty, this.isPortrait);
+    this.board.setupNewGame(options, this.isPortrait);
 
     // Update HUD display
-    const diffConfig = CONFIG.DIFFICULTIES[difficulty];
+    let title = 'FIND THE NUMBER';
+    let starGoalText = '';
+    if (gameState.gameMode === 'campaign') {
+      title = `LEVEL ${gameState.currentLevel}`;
+      const levelDef = CONFIG.CAMPAIGN_LEVELS[gameState.currentLevel - 1];
+      if (levelDef && levelDef.stars) {
+        starGoalText = `3★ < ${levelDef.stars[0]}s`;
+      }
+    } else if (gameState.gameMode === 'daily') {
+      title = 'DAILY HUNT';
+    } else {
+      title = CONFIG.DIFFICULTIES[gameState.difficulty]?.name || 'CLASSIC';
+      const diffDef = CONFIG.DIFFICULTIES[gameState.difficulty];
+      if (diffDef && diffDef.stars) {
+        starGoalText = `3★ < ${diffDef.stars[0]}s`;
+      }
+    }
+
     if (this.dom.hudDifficultyBadge) {
-      this.dom.hudDifficultyBadge.textContent = diffConfig.name;
-      this.dom.hudDifficultyBadge.className = `badge-difficulty ${diffConfig.badgeClass}`;
+      this.dom.hudDifficultyBadge.textContent = title;
+      this.dom.hudDifficultyBadge.className = 'badge-difficulty badge-medium';
+    }
+    if (this.dom.hudStarGoal) {
+      this.dom.hudStarGoal.textContent = starGoalText;
+      this.dom.hudStarGoal.style.display = starGoalText ? 'inline-block' : 'none';
+    }
+    if (this.dom.mobileHudStarGoal) {
+      this.dom.mobileHudStarGoal.textContent = starGoalText;
+      this.dom.mobileHudStarGoal.style.display = starGoalText ? 'inline-block' : 'none';
     }
     if (this.dom.hudTarget) this.dom.hudTarget.textContent = '1';
     if (this.dom.mobileHudTarget) this.dom.mobileHudTarget.textContent = '1';
     if (this.dom.hudTime) this.dom.hudTime.textContent = '00:00';
     if (this.dom.mobileHudTime) this.dom.mobileHudTime.textContent = '00:00';
-    if (this.dom.hudFound) this.dom.hudFound.textContent = '0 / 100';
+    if (this.dom.hudFound) this.dom.hudFound.textContent = `0 / ${gameState.totalNumbers}`;
     this.updateHintUI(CONFIG.HINTS_PER_ROUND || 3);
     this.setHintDisabled(true);
 
-    // Reset countdown presentation
-    if (this.dom.countdownStage) {
-      this.dom.countdownStage.classList.remove('is-go');
-    }
-    if (this.dom.countdownSubtext) this.dom.countdownSubtext.textContent = 'GET READY';
+    // Snappy Countdown (Reduced friction, rapid engagement)
+    if (this.dom.countdownStage) this.dom.countdownStage.classList.remove('is-go');
+    if (this.dom.countdownSubtext) this.dom.countdownSubtext.textContent = 'READY?';
     if (this.dom.countdownHint) this.dom.countdownHint.textContent = 'FIND NUMBER 1';
-
-    // Show countdown overlay
-    if (this.dom.countdownOverlay) {
-      this.dom.countdownOverlay.classList.add('active');
-    }
+    if (this.dom.countdownOverlay) this.dom.countdownOverlay.classList.add('active');
 
     const triggerTickAnim = () => {
       if (this.dom.countdownText) {
         this.dom.countdownText.classList.remove('pop');
-        void this.dom.countdownText.offsetWidth; // force reflow
+        void this.dom.countdownText.offsetWidth;
         this.dom.countdownText.classList.add('pop');
       }
       if (this.dom.countdownRipple) {
         this.dom.countdownRipple.classList.remove('pulse');
-        void this.dom.countdownRipple.offsetWidth; // force reflow
+        void this.dom.countdownRipple.offsetWidth;
         this.dom.countdownRipple.classList.add('pulse');
       }
     };
 
-    let count = CONFIG.COUNTDOWN_SECONDS;
-    if (this.dom.countdownText) this.dom.countdownText.textContent = count;
+    let step = 2; // Snappy 2-stage countdown: 1 -> GO! (approx 1.2s total)
+    if (this.dom.countdownText) this.dom.countdownText.textContent = '1';
     triggerTickAnim();
     audio.playCountdownTick();
 
     if (this.countdownTimerId) clearInterval(this.countdownTimerId);
     this.countdownTimerId = setInterval(() => {
-      count--;
-      if (count > 0) {
-        if (this.dom.countdownText) this.dom.countdownText.textContent = count;
-        triggerTickAnim();
-        audio.playCountdownTick();
-      } else if (count === 0) {
+      step--;
+      if (step === 1) {
         if (this.dom.countdownStage) this.dom.countdownStage.classList.add('is-go');
         if (this.dom.countdownSubtext) this.dom.countdownSubtext.textContent = "LET'S GO!";
-        if (this.dom.countdownHint) this.dom.countdownHint.textContent = "FIND NUMBER 1!";
         if (this.dom.countdownText) this.dom.countdownText.textContent = t('go');
         triggerTickAnim();
         audio.playCountdownGo();
       } else {
         clearInterval(this.countdownTimerId);
         this.countdownTimerId = null;
-        if (this.dom.countdownOverlay) {
-          this.dom.countdownOverlay.classList.remove('active');
-        }
-        if (this.dom.countdownStage) {
-          this.dom.countdownStage.classList.remove('is-go');
-        }
-        this.startGameplay(difficulty);
+        if (this.dom.countdownOverlay) this.dom.countdownOverlay.classList.remove('active');
+        if (this.dom.countdownStage) this.dom.countdownStage.classList.remove('is-go');
+        this.startGameplay();
       }
-    }, 850);
+    }, 600);
   }
 
-  startGameplay(difficulty) {
+  startGameplay() {
     gameState.setStatus(GameStatus.PLAYING);
     this.updateHintUI(CONFIG.HINTS_PER_ROUND || 3);
+
+    // If Level 1 or small board, gently pulse number 1 to guarantee instantaneous first tap!
+    if (gameState.currentLevel === 1 || gameState.totalNumbers <= 15) {
+      this.board.pulseOnboardingTarget(1);
+    }
 
     this.timer.start();
     platform.gameplayStart();
@@ -578,48 +797,67 @@ class GameApp {
     const isCorrect = gameState.recordClick(clickedVal);
 
     if (isCorrect) {
-      audio.playCorrect(clickedVal);
+      audio.playCorrect(clickedVal, gameState.combo);
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(12); } catch (e) {}
+      }
+
+      // Fast Find Combo Feedback
+      if (gameState.combo >= 2 && this.dom.comboBanner) {
+        this.dom.comboBanner.textContent = `${gameState.combo}x COMBO! 🔥`;
+        this.dom.comboBanner.classList.add('active');
+        if (this.comboBannerTimeout) clearTimeout(this.comboBannerTimeout);
+        this.comboBannerTimeout = setTimeout(() => {
+          if (this.dom.comboBanner) this.dom.comboBanner.classList.remove('active');
+        }, 1200);
+      }
     } else {
-      // Wrong click: completely ignored with zero penalty/sound
       audio.playWrong();
+      this.board.triggerWrongNumber(clickedVal);
+      const wrapper = document.querySelector('.board-wrapper');
+      if (wrapper) {
+        wrapper.classList.remove('screen-shake');
+        void wrapper.offsetWidth;
+        wrapper.classList.add('screen-shake');
+      }
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(25); } catch (e) {}
+      }
+      if (this.dom.comboBanner) {
+        this.dom.comboBanner.classList.remove('active');
+      }
     }
   }
 
-  onNumberFound({ foundNumber, nextTarget, isCompleted }) {
+  onNumberFound({ foundNumber, nextTarget, isCompleted, totalNumbers }) {
+    const total = totalNumbers || gameState.totalNumbers || 100;
     if (this.dom.hudFound) {
-      this.dom.hudFound.textContent = `${foundNumber} / 100`;
+      this.dom.hudFound.textContent = `${foundNumber} / ${total}`;
     }
 
-    // Platform progress reporting (CrazyGames SDK: 0 to 100%)
-    // Report at milestone 50 so the SDK's 1000ms throttle is never active at completion
-    if (foundNumber === 25 || foundNumber === 50) {
-      platform.reportGameCompletedPercentage(foundNumber);
+    const pct = Math.round((foundNumber / total) * 100);
+    if (foundNumber === 1 || pct === 50) {
+      platform.reportGameCompletedPercentage(pct);
     }
 
-    // Trigger Happytime on first find (number 1)
+    // Trigger Happytime on first find
     if (foundNumber === 1) {
       platform.happytime();
+      this.board.clearOnboardingPulse();
     }
 
-    // 1. Immediately permanently circle the found number
+    // Permanently circle found number
     this.board.markNumberFound(foundNumber);
 
     if (isCompleted) {
-      // Number 100 found! Completion state reached, strictly NO shuffle after 100.
       return;
     }
 
-    // 2. Update target HUD displays (upcoming target is NOT circled on board!)
-    if (this.dom.hudTarget) {
-      this.dom.hudTarget.textContent = nextTarget;
-    }
-    if (this.dom.mobileHudTarget) {
-      this.dom.mobileHudTarget.textContent = nextTarget;
-    }
+    if (this.dom.hudTarget) this.dom.hudTarget.textContent = nextTarget;
+    if (this.dom.mobileHudTarget) this.dom.mobileHudTarget.textContent = nextTarget;
 
-    // 3. Shuffle board if difficulty requires (Medium / Hard)
-    const diffConfig = CONFIG.DIFFICULTIES[gameState.difficulty];
-    if (diffConfig.shuffleOnCorrect) {
+    // Board shuffle if enabled for this mode/level
+    if (this.board.shuffleOnCorrect) {
       this.setHintDisabled(true);
       audio.playShuffle();
       gameState.incrementShuffles();
@@ -665,71 +903,223 @@ class GameApp {
     this.timer.stop();
     platform.gameplayStop();
     this.board.clearHintHighlight();
+    this.board.clearOnboardingPulse();
     this.board.cancelAnimation();
     this.setHintDisabled(true);
     audio.resumeMusic();
     gameState.setStatus(GameStatus.HOME);
+    this.updateHomeUI();
     this.showScreen('screen-home');
   }
 
   async handleGameComplete() {
     this.board.clearHintHighlight();
+    this.board.clearOnboardingPulse();
     this.setHintDisabled(true);
     const elapsedSec = this.timer.stop();
 
-    // 1. Report 100% game completion while gameplay session is active
     platform.reportGameCompletedPercentage(100);
-
-    // 2. Submit leaderboard score to CrazyGames (score in milliseconds) while session is active
     platform.submitScore({ score: Math.round(elapsedSec * 1000) });
-
-    // 3. Trigger celebration & audio
     platform.happytime();
-    audio.playWin();
 
-    // 4. Conclude active gameplay session cleanly after events have dispatched
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate([30, 50, 40]); } catch (e) {}
+    }
+
     setTimeout(() => {
       platform.gameplayStop();
     }, 400);
 
-    // Check personal best
-    const isNewBest = await storage.setBestTime(gameState.difficulty, elapsedSec);
-
-    // Populate Results Screen
     const formattedTime = this.timer.getFormattedTime();
-    const bestSec = await storage.getBestTime(gameState.difficulty);
-    let formattedBest = '—';
-    if (bestSec !== null && typeof bestSec === 'number' && bestSec >= 1.0) {
-      const m = Math.floor(bestSec / 60);
-      const s = Math.floor(bestSec % 60);
-      formattedBest = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    }
-
     if (this.dom.resTime) this.dom.resTime.textContent = formattedTime;
-    if (this.dom.resBestTime) this.dom.resBestTime.textContent = formattedBest;
-    if (this.dom.resDifficulty) {
-      this.dom.resDifficulty.textContent = CONFIG.DIFFICULTIES[gameState.difficulty].name;
-      this.dom.resDifficulty.className = `badge-difficulty ${CONFIG.DIFFICULTIES[gameState.difficulty].badgeClass}`;
-    }
-
-    if (this.dom.resNewBestBadge) {
-      this.dom.resNewBestBadge.style.display = isNewBest ? 'inline-block' : 'none';
-    }
-
-    if (this.dom.resFound) this.dom.resFound.textContent = '100 / 100';
+    if (this.dom.resFound) this.dom.resFound.textContent = `${gameState.totalNumbers} / ${gameState.totalNumbers}`;
+    if (this.dom.resCombo) this.dom.resCombo.textContent = `x${gameState.maxCombo || 1}`;
 
     const hintsUsed = (CONFIG.HINTS_PER_ROUND || 3) - gameState.hintsRemaining;
     if (this.dom.resHints) this.dom.resHints.textContent = hintsUsed;
 
-    if (this.dom.resShuffles) {
-      if (gameState.difficulty === 'easy') {
-        this.dom.resShuffles.textContent = '—';
-      } else {
-        this.dom.resShuffles.textContent = gameState.shufflesCount;
+    // Reset stars & daily banner display
+    this.dom.resStars.forEach(s => {
+      if (s) {
+        s.classList.remove('active');
+        s.style.display = 'none';
+      }
+    });
+    if (this.dom.resDailyBanner) this.dom.resDailyBanner.style.display = 'none';
+    if (this.dom.resNewBestBadge) this.dom.resNewBestBadge.style.display = 'none';
+
+    let starsEarned = 1;
+    let isNewBestRecord = false;
+    let bestTimeSec = elapsedSec;
+
+    if (gameState.gameMode === 'campaign') {
+      const levelDef = CONFIG.CAMPAIGN_LEVELS[gameState.currentLevel - 1];
+      if (levelDef && levelDef.stars) {
+        if (elapsedSec <= levelDef.stars[0]) starsEarned = 3;
+        else if (elapsedSec <= levelDef.stars[1]) starsEarned = 2;
+        else starsEarned = 1;
+      }
+
+      const saveRes = await storage.saveLevelResult(gameState.currentLevel, starsEarned, elapsedSec);
+      isNewBestRecord = saveRes.isNewBestTime;
+      bestTimeSec = saveRes.bestTime || elapsedSec;
+
+      if (this.dom.resModeLabel) this.dom.resModeLabel.textContent = 'STAGE';
+      if (this.dom.resDifficulty) {
+        this.dom.resDifficulty.textContent = `LEVEL ${gameState.currentLevel}: ${levelDef?.name || ''}`;
+      }
+
+      // Next level button
+      const hasNext = gameState.currentLevel < (CONFIG.CAMPAIGN_LEVELS?.length || 20);
+      if (this.dom.btnResultsNext) {
+        this.dom.btnResultsNext.style.display = hasNext ? 'inline-flex' : 'none';
+        this.dom.btnResultsNext.textContent = `Next: Level ${gameState.currentLevel + 1} →`;
+      }
+      if (this.dom.btnResultsLevels) this.dom.btnResultsLevels.style.display = 'inline-flex';
+
+    } else if (gameState.gameMode === 'daily') {
+      starsEarned = 3;
+      const dailyRes = await storage.completeDailyChallenge(elapsedSec);
+      bestTimeSec = elapsedSec;
+
+      if (this.dom.resModeLabel) this.dom.resModeLabel.textContent = 'DAILY HUNT';
+      if (this.dom.resDifficulty) {
+        this.dom.resDifficulty.textContent = "TODAY'S CHALLENGE";
+      }
+
+      if (this.dom.resDailyBanner) {
+        this.dom.resDailyBanner.style.display = 'block';
+        this.dom.resDailyBanner.textContent = `🔥 DAY ${dailyRes.streak} STREAK SECURED! COME BACK TOMORROW FOR DAY ${dailyRes.streak + 1}!`;
+      }
+
+      if (this.dom.btnResultsNext) this.dom.btnResultsNext.style.display = 'none';
+      if (this.dom.btnResultsLevels) this.dom.btnResultsLevels.style.display = 'none';
+
+    } else {
+      // Classic mode
+      const diffDef = CONFIG.DIFFICULTIES[gameState.difficulty];
+      if (diffDef && diffDef.stars) {
+        if (elapsedSec <= diffDef.stars[0]) starsEarned = 3;
+        else if (elapsedSec <= diffDef.stars[1]) starsEarned = 2;
+        else starsEarned = 1;
+      }
+
+      const bestRes = await storage.setBestTime(gameState.difficulty, elapsedSec);
+      isNewBestRecord = bestRes.isNewBest;
+      bestTimeSec = bestRes.bestTime || elapsedSec;
+
+      if (this.dom.resModeLabel) this.dom.resModeLabel.textContent = 'MODE';
+      if (this.dom.resDifficulty) {
+        this.dom.resDifficulty.textContent = diffDef?.name || 'CLASSIC';
+      }
+      if (this.dom.btnResultsNext) this.dom.btnResultsNext.style.display = 'none';
+      if (this.dom.btnResultsLevels) this.dom.btnResultsLevels.style.display = 'none';
+    }
+
+    // Update and animate Best Time display
+    if (this.dom.resBestTime) {
+      this.dom.resBestTime.textContent = formatSeconds(bestTimeSec);
+      if (isNewBestRecord) {
+        this.dom.resBestTime.classList.add('is-new-record');
       }
     }
 
+    if (this.dom.resNewBestBadge) {
+      this.dom.resNewBestBadge.style.display = isNewBestRecord ? 'inline-block' : 'none';
+    }
+
+    // Animate Stars sequentially
+    this.dom.resStars.forEach((starEl, idx) => {
+      if (!starEl) return;
+      starEl.style.display = 'inline-block';
+      if (idx < starsEarned) {
+        setTimeout(() => {
+          starEl.classList.add('active');
+          audio.playStarPop(idx + 1);
+        }, (idx + 1) * 220);
+      }
+    });
+
+    if (isNewBestRecord) {
+      audio.playNewBest();
+    } else {
+      audio.playLevelWin(starsEarned);
+    }
+
+    if (starsEarned === 3 || isNewBestRecord) {
+      this.triggerConfetti();
+    }
+
+    await this.updateHomeUI();
     this.showScreen('screen-results');
+  }
+
+  /**
+   * High-performance canvas confetti particle celebration.
+   */
+  triggerConfetti() {
+    const canvas = this.dom.confettiCanvas;
+    if (!canvas) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    canvas.style.display = 'block';
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const colors = ['#f59e0b', '#10b981', '#ef4444', '#3b82f6', '#f3f4f6', '#d4af37'];
+    const particles = [];
+    const count = 55;
+
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: canvas.width * 0.5 + (Math.random() - 0.5) * 140,
+        y: canvas.height * 0.32 + (Math.random() - 0.5) * 60,
+        vx: (Math.random() - 0.5) * 14,
+        vy: -Math.random() * 11 - 5,
+        size: Math.random() * 8 + 5,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rotation: Math.random() * 360,
+        rotSpeed: (Math.random() - 0.5) * 12,
+        opacity: 1
+      });
+    }
+
+    let startTime = performance.now();
+    const duration = 2500;
+
+    const animate = (now) => {
+      const elapsed = now - startTime;
+      if (elapsed > duration) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.style.display = 'none';
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const fadeProgress = Math.max(0, 1 - (elapsed / duration));
+
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.38; // gravity
+        p.vx *= 0.98; // air drag
+        p.rotation += p.rotSpeed;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.opacity * fadeProgress;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
+        ctx.restore();
+      });
+
+      requestAnimationFrame(animate);
+    };
+
+    requestAnimationFrame(animate);
   }
 }
 

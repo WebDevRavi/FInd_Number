@@ -58,19 +58,22 @@ export class BoardManager {
   constructor(boardContainer, onNumberClick) {
     this.container = boardContainer;
     this.onNumberClick = onNumberClick;
-    this.numbers = []; // 100 number items { value, element, found, slotIndex, xPercent, yPercent, rotation, ... }
-    this.slots = [];   // Array of 100 slot positions { xPercent, yPercent }
+    this.numbers = []; // number items { value, element, found, slotIndex, xPercent, yPercent, rotation, ... }
+    this.slots = [];   // Array of slot positions { xPercent, yPercent }
+    this.totalNumbers = CONFIG.TOTAL_NUMBERS || 100;
     this.isInputLocked = false;
     this.isShuffling = false;
     this.isAnimPaused = false;
     this.currentDifficulty = 'medium';
+    this.shuffleOnCorrect = true;
+    this.rotateOnShuffle = false;
 
     // Animation handles
     this.animFrameId = null;
     this.animIntervalId = null;
     this.animStartTime = 0;
     this.animPausedElapsed = 0;
-    this.animDuration = CONFIG.SHUFFLE_DURATION_MS; // 600ms
+    this.animDuration = CONFIG.SHUFFLE_DURATION_MS; // 500ms
     this.animOnComplete = null;
     this.animStep = null;
 
@@ -78,16 +81,29 @@ export class BoardManager {
     this.activeHintItem = null;
     this.hintTimeoutId = null;
 
-    this.initDOM();
+    this.initDOM(this.totalNumbers);
   }
 
-  initDOM() {
+  initDOM(totalNumbers = 100) {
+    this.totalNumbers = totalNumbers;
     this.container.innerHTML = '';
     this.numbers = [];
 
+    // Apply board size class based on number count for responsive typography & touch targets
+    this.container.classList.remove('count-tiny', 'count-small', 'count-medium', 'count-large');
+    if (totalNumbers <= 15) {
+      this.container.classList.add('count-tiny');
+    } else if (totalNumbers <= 30) {
+      this.container.classList.add('count-small');
+    } else if (totalNumbers <= 55) {
+      this.container.classList.add('count-medium');
+    } else {
+      this.container.classList.add('count-large');
+    }
+
     const fragment = document.createDocumentFragment();
 
-    for (let i = 1; i <= CONFIG.TOTAL_NUMBERS; i++) {
+    for (let i = 1; i <= totalNumbers; i++) {
       const el = document.createElement('div');
       el.className = 'board-number';
       el.dataset.value = i;
@@ -96,7 +112,6 @@ export class BoardManager {
       el.setAttribute('aria-label', `Number ${i}`);
 
       // 1. Permanent hand-drawn found marker circle (SVG)
-      // Belongs strictly to this number, positioned behind text, moves with it
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('class', 'found-circle-svg');
       svg.setAttribute('aria-hidden', 'true');
@@ -118,7 +133,7 @@ export class BoardManager {
       span.textContent = i;
       el.appendChild(span);
 
-      // 3. Generous invisible hit target (min 48x48px touch target)
+      // 3. Generous invisible hit target
       const hitArea = document.createElement('div');
       hitArea.className = 'number-hit-target';
       el.appendChild(hitArea);
@@ -170,22 +185,32 @@ export class BoardManager {
   }
 
   /**
-   * Generates 100 guaranteed non-overlapping organic slots
-   * based on the board container's aspect ratio.
-   * On mobile devices, keeps a controlled jitter and aspect-normalized relaxation
-   * so numbers have plenty of breathing room and are effortlessly clickable.
-   * On desktop, preserves the exact existing placement and spacing.
+   * Generates guaranteed non-overlapping organic slots
+   * based on the board container's aspect ratio and the dynamic number count.
+   * Small counts (10–30) enjoy expansive physical spacing and huge touch zones.
    */
   generateSlots(isPortrait = false) {
-    const total = CONFIG.TOTAL_NUMBERS;
+    const total = this.totalNumbers || 100;
     let cols, rows;
 
-    if (isPortrait) {
-      cols = 8;
-      rows = 13; // 8 * 13 = 104 cells
+    if (total <= 12) {
+      cols = isPortrait ? 3 : 4;
+      rows = isPortrait ? 4 : 3;
+    } else if (total <= 20) {
+      cols = isPortrait ? 4 : 5;
+      rows = isPortrait ? 5 : 4;
+    } else if (total <= 35) {
+      cols = isPortrait ? 5 : 7;
+      rows = isPortrait ? 7 : 5;
+    } else if (total <= 55) {
+      cols = isPortrait ? 6 : 9;
+      rows = isPortrait ? 9 : 6;
+    } else if (total <= 75) {
+      cols = isPortrait ? 7 : 11;
+      rows = isPortrait ? 11 : 7;
     } else {
-      cols = 13;
-      rows = 8; // 13 * 8 = 104 cells
+      cols = isPortrait ? 8 : 13;
+      rows = isPortrait ? 13 : 8;
     }
 
     const padX = CONFIG.BOARD.PADDING_PERCENT;
@@ -203,19 +228,17 @@ export class BoardManager {
       }
     }
 
-    // Shuffle grid cells to pick 100 positions randomly
+    // Shuffle grid cells to pick slots randomly
     for (let i = candidateGrid.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [candidateGrid[i], candidateGrid[j]] = [candidateGrid[j], candidateGrid[i]];
     }
 
     const isDesktop = !isPortrait && window.innerWidth > 950 && window.innerHeight > 520;
-
     const pickedCells = candidateGrid.slice(0, total);
+
     const slots = pickedCells.map(({ c, r }) => {
-      // On mobile, use controlled jitter so numbers never crowd neighboring cells
-      // On desktop, retain existing ±30% jitter
-      const jitterFactor = isDesktop ? 0.6 : (isPortrait ? 0.28 : 0.32);
+      const jitterFactor = isDesktop ? (total <= 25 ? 0.4 : 0.6) : (isPortrait ? 0.28 : 0.32);
       const jitterX = (Math.random() - 0.5) * jitterFactor;
       const jitterY = (Math.random() - 0.5) * jitterFactor;
 
@@ -228,9 +251,11 @@ export class BoardManager {
       };
     });
 
+    // Relaxation to eliminate crowding
+    const baseMinDist = total <= 15 ? 18.0 : total <= 25 ? 12.0 : total <= 50 ? 8.0 : 5.5;
+
     if (isDesktop) {
-      // Desktop: Exact original relaxation (preserves approved desktop feel)
-      const minDistance = 5.5; // in percentage units
+      const minDistance = baseMinDist;
       for (let pass = 0; pass < 3; pass++) {
         for (let i = 0; i < slots.length; i++) {
           for (let j = i + 1; j < slots.length; j++) {
@@ -251,14 +276,11 @@ export class BoardManager {
         }
       }
     } else {
-      // Mobile / Tablet / Portrait: Aspect-ratio aware relaxation
-      // Guarantees generous physical distance between numbers on touchscreens
       const boardW = this.container?.clientWidth || (isPortrait ? 380 : 800);
       const boardH = this.container?.clientHeight || (isPortrait ? 680 : 400);
       const aspect = Math.max(0.3, Math.min(3.0, boardW / boardH));
 
-      // Minimum normalized distance (scaled by aspect ratio)
-      const minDistanceNorm = isPortrait ? 6.8 : 5.8;
+      const minDistanceNorm = total <= 15 ? 18.0 : total <= 25 ? 12.5 : total <= 50 ? 8.5 : (isPortrait ? 6.8 : 5.8);
       const passes = 4;
 
       for (let pass = 0; pass < passes; pass++) {
@@ -289,40 +311,78 @@ export class BoardManager {
    * Sets up a new round: generates slots, assigns initial positions,
    * resets found states and permanent circles.
    */
-  setupNewGame(difficulty = 'medium', isPortrait = false) {
+  setupNewGame(options = 'medium', isPortrait = false) {
     this.clearHintHighlight();
     this.cancelAnimation();
     this.unlockInput();
-    this.currentDifficulty = difficulty;
+
+    let diff = 'medium';
+    let total = 100;
+    let shuffle = true;
+    let rotate = false;
+
+    if (typeof options === 'string') {
+      diff = options;
+      const diffCfg = CONFIG.DIFFICULTIES[diff];
+      total = diffCfg?.totalNumbers || 100;
+      shuffle = diffCfg?.shuffleOnCorrect ?? true;
+      rotate = diffCfg?.rotateOnShuffle ?? false;
+    } else if (typeof options === 'object') {
+      diff = options.difficulty || 'medium';
+      const diffCfg = CONFIG.DIFFICULTIES[diff];
+      total = options.totalNumbers || diffCfg?.totalNumbers || 100;
+      shuffle = options.shuffle !== undefined ? options.shuffle : (diffCfg?.shuffleOnCorrect ?? true);
+      rotate = options.rotate !== undefined ? options.rotate : (diffCfg?.rotateOnShuffle ?? false);
+    }
+
+    this.currentDifficulty = diff;
+    this.shuffleOnCorrect = shuffle;
+    this.rotateOnShuffle = rotate;
+
+    if (total !== this.totalNumbers || this.numbers.length !== total) {
+      this.initDOM(total);
+    }
+
     this.generateSlots(isPortrait);
 
-    // Permute 100 slot indices
-    const slotIndices = Array.from({ length: CONFIG.TOTAL_NUMBERS }, (_, i) => i);
+    // Permute slot indices
+    const slotIndices = Array.from({ length: this.totalNumbers }, (_, i) => i);
     for (let i = slotIndices.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [slotIndices[i], slotIndices[j]] = [slotIndices[j], slotIndices[i]];
     }
 
-    const isHard = difficulty === 'hard';
-
     // Apply positions immediately without transition
     this.numbers.forEach((item, idx) => {
       item.found = false;
-      item.element.classList.remove('is-found', 'just-found');
+      item.element.classList.remove('is-found', 'just-found', 'is-onboarding-pulse');
 
       const sIdx = slotIndices[idx];
       item.slotIndex = sIdx;
       item.xPercent = this.slots[sIdx].xPercent;
       item.yPercent = this.slots[sIdx].yPercent;
-
-      // All modes start completely upright at 0° for a clean, normal-looking board.
-      // In Hard mode, random 360° rotations only trigger on shuffles once number 1 is found.
       item.rotation = 0;
 
       item.element.style.transition = 'none';
       item.element.style.left = `${item.xPercent}%`;
       item.element.style.top = `${item.yPercent}%`;
       item.element.style.transform = `translate(-50%, -50%) rotate(${item.rotation.toFixed(1)}deg)`;
+    });
+  }
+
+  /**
+   * Highlights target number with a gentle onboarding pulse for instant first-tap recognition.
+   */
+  pulseOnboardingTarget(value = 1) {
+    const item = this.numbers.find(n => n.value === value);
+    if (item && !item.found) {
+      item.element.classList.add('is-onboarding-pulse');
+    }
+  }
+
+  clearOnboardingPulse() {
+    this.numbers.forEach(item => {
+      item.element.classList.remove('is-onboarding-pulse');
     });
   }
 
@@ -380,6 +440,23 @@ export class BoardManager {
   }
 
   /**
+   * Triggers visual feedback (shake/red flash) on wrong number tap.
+   */
+  triggerWrongNumber(value) {
+    const item = this.numbers.find(n => n.value === value);
+    if (item && !item.found) {
+      item.element.classList.remove('is-wrong');
+      void item.element.offsetWidth; // re-trigger CSS animation
+      item.element.classList.add('is-wrong');
+      setTimeout(() => {
+        if (item.element) {
+          item.element.classList.remove('is-wrong');
+        }
+      }, 350);
+    }
+  }
+
+  /**
    * Continuous A -> B shuffle animation over 600ms.
    * Frame-rate independent: driven by elapsed time via performance.now().
    * Hybrid rAF + interval loop ensures smooth 60/120fps and prevents throttling.
@@ -389,9 +466,7 @@ export class BoardManager {
    */
   shuffleAll(onShuffleEnd = null) {
     this.clearHintHighlight();
-    const diffConfig = CONFIG.DIFFICULTIES[this.currentDifficulty];
-    if (!diffConfig.shuffleOnCorrect) {
-      // Easy mode: numbers never move
+    if (!this.shuffleOnCorrect) {
       if (onShuffleEnd) onShuffleEnd();
       return;
     }
@@ -400,17 +475,17 @@ export class BoardManager {
     this.cancelAnimation();
     this.lockInput();
 
-    // Create a new full permutation of slots
-    const newSlotIndices = Array.from({ length: CONFIG.TOTAL_NUMBERS }, (_, i) => i);
+    const count = this.numbers.length;
+    const newSlotIndices = Array.from({ length: count }, (_, i) => i);
     for (let i = newSlotIndices.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [newSlotIndices[i], newSlotIndices[j]] = [newSlotIndices[j], newSlotIndices[i]];
     }
 
-    const isHard = this.currentDifficulty === 'hard';
+    const isRotate = this.rotateOnShuffle;
 
-    // Capture start states (A) and calculate target states (B) for all 100 numbers
-    for (let i = 0; i < this.numbers.length; i++) {
+    // Capture start states (A) and calculate target states (B) for all numbers
+    for (let i = 0; i < count; i++) {
       const item = this.numbers[i];
       const sIdx = newSlotIndices[i];
       item.slotIndex = sIdx;
@@ -422,7 +497,7 @@ export class BoardManager {
       item.targetX = this.slots[sIdx].xPercent;
       item.targetY = this.slots[sIdx].yPercent;
 
-      if (isHard) {
+      if (isRotate) {
         // Full random rotation 0° -> 360°
         item.targetRot = Math.random() * 360;
         item.rotDelta = getShortestAngleDelta(item.startRot, item.targetRot);

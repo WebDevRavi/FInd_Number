@@ -112,14 +112,17 @@ class StorageManager {
   }
 
   async setBestTime(difficulty, timeSeconds) {
-    if (!timeSeconds || typeof timeSeconds !== 'number' || timeSeconds < 1.0) return false;
+    if (!timeSeconds || typeof timeSeconds !== 'number' || timeSeconds < 0.5) {
+      const current = await this.getBestTime(difficulty);
+      return { isNewBest: false, bestTime: current };
+    }
     const key = `${CONFIG.STORAGE_KEYS.BEST_TIME_PREFIX}${difficulty}`;
     const currentBest = await this.getBestTime(difficulty);
     if (currentBest === null || timeSeconds < currentBest) {
       await this.setItem(key, timeSeconds);
-      return true; // New record!
+      return { isNewBest: true, bestTime: timeSeconds };
     }
-    return false;
+    return { isNewBest: false, bestTime: currentBest };
   }
 
   async getTheme() {
@@ -152,6 +155,104 @@ class StorageManager {
 
   async setVolume(vol) {
     await this.setItem(CONFIG.STORAGE_KEYS.VOLUME, vol);
+  }
+
+  // ==================== CAMPAIGN PROGRESSION ====================
+
+  async getCampaignProgress() {
+    const data = await this.getItem(CONFIG.STORAGE_KEYS.CAMPAIGN_PROGRESS, {
+      unlockedLevel: 1,
+      stars: {},
+      bestTimes: {}
+    });
+    return data || { unlockedLevel: 1, stars: {}, bestTimes: {} };
+  }
+
+  async saveLevelResult(level, starsEarned, timeSeconds) {
+    const progress = await this.getCampaignProgress();
+    const currentStars = progress.stars[level] || 0;
+    const currentBestTime = progress.bestTimes[level] || null;
+
+    let isNewBestTime = false;
+    let isNewBestStars = false;
+
+    if (starsEarned > currentStars) {
+      progress.stars[level] = starsEarned;
+      isNewBestStars = true;
+    }
+
+    if (currentBestTime === null || timeSeconds < currentBestTime) {
+      progress.bestTimes[level] = timeSeconds;
+      isNewBestTime = true;
+    }
+
+    // Unlock next level (up to max campaign levels)
+    const maxLevel = CONFIG.CAMPAIGN_LEVELS?.length || 20;
+    if (level >= progress.unlockedLevel && level < maxLevel) {
+      progress.unlockedLevel = level + 1;
+    }
+
+    await this.setItem(CONFIG.STORAGE_KEYS.CAMPAIGN_PROGRESS, progress);
+    return { progress, isNewBestTime, isNewBestStars, bestTime: progress.bestTimes[level] };
+  }
+
+  // ==================== DAILY CHALLENGE & STREAKS ====================
+
+  getTodayKey() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  getYesterdayKey() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  async getDailyStatus() {
+    const today = this.getTodayKey();
+    const yesterday = this.getYesterdayKey();
+
+    const lastDate = await this.getItem(CONFIG.STORAGE_KEYS.LAST_DAILY_DATE, null);
+    let streak = await this.getItem(CONFIG.STORAGE_KEYS.DAILY_STREAK, 0);
+    streak = typeof streak === 'number' ? streak : 0;
+
+    const completedToday = lastDate === today;
+
+    // If missed yesterday and not played today, streak broke
+    if (!completedToday && lastDate !== yesterday && lastDate !== null) {
+      streak = 0;
+      await this.setItem(CONFIG.STORAGE_KEYS.DAILY_STREAK, 0);
+    }
+
+    return {
+      today,
+      lastDate,
+      streak,
+      completedToday
+    };
+  }
+
+  async completeDailyChallenge(timeSeconds) {
+    const status = await this.getDailyStatus();
+    if (status.completedToday) return status;
+
+    const newStreak = status.streak + 1;
+    await this.setItem(CONFIG.STORAGE_KEYS.DAILY_STREAK, newStreak);
+    await this.setItem(CONFIG.STORAGE_KEYS.LAST_DAILY_DATE, status.today);
+
+    return {
+      today: status.today,
+      lastDate: status.today,
+      streak: newStreak,
+      completedToday: true
+    };
   }
 }
 

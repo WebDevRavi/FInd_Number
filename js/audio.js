@@ -355,15 +355,17 @@ class AudioManager {
   }
 
   /**
-   * Pleasant crisp pencil checkmark / chime for correct number found
+   * Pleasant crisp pencil checkmark / chime for correct number found.
+   * Scales pitch with number index and combo streak for addictive auditory feedback.
    */
-  playCorrect(currentNumber = 1) {
+  playCorrect(currentNumber = 1, combo = 1) {
     if (!this.soundEnabled || this.platformMuted) return;
     this.ensureContext();
     if (!this.ctx) return;
 
     const t = this.ctx.currentTime;
-    const baseFreq = 440 + Math.min(currentNumber * 4, 400);
+    const comboBoost = Math.min((combo - 1) * 35, 300);
+    const baseFreq = 440 + Math.min(currentNumber * 3, 350) + comboBoost;
 
     // Primary bell tone
     const osc = this.ctx.createOscillator();
@@ -392,6 +394,91 @@ class AudioManager {
     noiseGain.connect(this.sfxGain);
     noiseOsc.start(t);
     noiseOsc.stop(t + 0.06);
+  }
+
+  /**
+   * Pop chime when a victory star illuminates.
+   */
+  playStarPop(index = 1) {
+    if (!this.soundEnabled || this.platformMuted) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+    const freq = notes[Math.min(index - 1, 2)] || 523.25;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, t);
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, t + 0.14);
+
+    gain.gain.setValueAtTime(0.65, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.22);
+  }
+
+  /**
+   * Celebratory stage clear arpeggio.
+   */
+  playLevelWin(stars = 3) {
+    if (!this.soundEnabled || this.platformMuted) return;
+    this.duckMusic(0.3, 1.4);
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const chords = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    chords.slice(0, stars + 1).forEach((freq, idx) => {
+      const startTime = t + (idx * 0.09);
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.linearRampToValueAtTime(0.7, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.45);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(startTime);
+      osc.stop(startTime + 0.45);
+    });
+  }
+
+  /**
+   * Triumphant fanfare when player sets a NEW BEST time record.
+   */
+  playNewBest() {
+    if (!this.soundEnabled || this.platformMuted) return;
+    this.duckMusic(0.2, 1.5);
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const notes = [587.33, 739.99, 880.00, 1174.66]; // D5, F#5, A5, D6 triumphant major chord
+    notes.forEach((freq, idx) => {
+      const startTime = t + (idx * 0.08);
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.linearRampToValueAtTime(0.8, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.55);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(startTime);
+      osc.stop(startTime + 0.55);
+    });
   }
 
   /**
