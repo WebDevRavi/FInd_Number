@@ -557,7 +557,7 @@ class GameApp {
     const hardBest = await storage.getBestTime('hard');
 
     const fmt = (sec) => {
-      if (sec === null) return '—';
+      if (sec === null || sec === undefined) return '—';
       const m = Math.floor(sec / 60);
       const s = Math.floor(sec % 60);
       return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
@@ -570,6 +570,40 @@ class GameApp {
     if (easyEl) easyEl.textContent = fmt(easyBest);
     if (medEl) medEl.textContent = fmt(medBest);
     if (hardEl) hardEl.textContent = fmt(hardBest);
+
+    // Campaign Stats
+    try {
+      const progress = await storage.getCampaignProgress();
+      let totalStars = 0;
+      Object.values(progress.stars || {}).forEach(s => {
+        totalStars += Number(s) || 0;
+      });
+      const maxStars = (CONFIG.CAMPAIGN_LEVELS?.length || 20) * 3;
+      const unlocked = progress.unlockedLevel || 1;
+      const currentDef = CONFIG.CAMPAIGN_LEVELS[unlocked - 1] || CONFIG.CAMPAIGN_LEVELS[0];
+
+      const campStarsEl = document.getElementById('stat-campaign-stars');
+      const campLevelEl = document.getElementById('stat-campaign-level');
+      if (campStarsEl) campStarsEl.textContent = `${totalStars} / ${maxStars} ⭐`;
+      if (campLevelEl) campLevelEl.textContent = `Unlocked: Level ${unlocked} (${currentDef.name})`;
+    } catch (e) {
+      console.warn('Error loading campaign stats:', e);
+    }
+
+    // Daily Challenge Stats
+    try {
+      const dailyStatus = await storage.getDailyStatus();
+      const dailyStreakEl = document.getElementById('stat-daily-streak');
+      const dailyStatusEl = document.getElementById('stat-daily-status');
+      if (dailyStreakEl) dailyStreakEl.textContent = `🔥 ${dailyStatus.streak || 0} Day${dailyStatus.streak === 1 ? '' : 's'}`;
+      if (dailyStatusEl) {
+        dailyStatusEl.textContent = dailyStatus.completedToday 
+          ? 'Completed today! Come back tomorrow' 
+          : 'Ready to play! Solve today\'s puzzle';
+      }
+    } catch (e) {
+      console.warn('Error loading daily stats:', e);
+    }
 
     this.openModal('leaderboard');
   }

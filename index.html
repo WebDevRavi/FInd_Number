@@ -467,29 +467,50 @@
         <h3 id="modal-leaderboard-title" class="modal-title">PERSONAL BESTS</h3>
         <p class="modal-subtitle">Fastest completion times recorded locally & via CrazyGames Data.</p>
 
-        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; text-align: left;">
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 4px; border: 1px solid var(--border-subtle);">
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; text-align: left;">
+          <!-- Campaign Progress -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(245, 158, 11, 0.08); border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.35);">
             <div>
-              <strong style="color: var(--color-easy);">EASY</strong>
+              <strong style="color: #f59e0b;">CAMPAIGN STARS</strong>
+              <div id="stat-campaign-level" style="font-size: 0.78rem; color: var(--text-muted);">Level 1: First Steps</div>
+            </div>
+            <div id="stat-campaign-stars" style="font-family: var(--font-numbers); font-size: 1.25rem; font-weight: 700; color: #f59e0b;">0 / 60 ⭐</div>
+          </div>
+
+          <!-- Daily Streak -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(239, 68, 68, 0.08); border-radius: 4px; border: 1px solid rgba(239, 68, 68, 0.35);">
+            <div>
+              <strong style="color: #ef4444;">DAILY STREAK</strong>
+              <div id="stat-daily-status" style="font-size: 0.78rem; color: var(--text-muted);">Play daily to keep streak</div>
+            </div>
+            <div id="stat-daily-streak" style="font-family: var(--font-numbers); font-size: 1.25rem; font-weight: 700; color: #ef4444;">🔥 0 Days</div>
+          </div>
+
+          <!-- Classic Easy -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(0,0,0,0.03); border-radius: 4px; border: 1px solid var(--border-subtle);">
+            <div>
+              <strong style="color: var(--color-easy);">EASY (1–20)</strong>
               <div style="font-size: 0.78rem; color: var(--text-muted);">Fixed positions</div>
             </div>
-            <div id="stat-best-easy" style="font-family: var(--font-serif); font-size: 1.3rem; font-weight: 700;">—</div>
+            <div id="stat-best-easy" style="font-family: var(--font-numbers); font-size: 1.25rem; font-weight: 700;">—</div>
           </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 4px; border: 1px solid var(--border-subtle);">
+          <!-- Classic Medium -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(0,0,0,0.03); border-radius: 4px; border: 1px solid var(--border-subtle);">
             <div>
-              <strong style="color: var(--color-medium);">MEDIUM</strong>
+              <strong style="color: var(--color-medium);">MEDIUM (1–50)</strong>
               <div style="font-size: 0.78rem; color: var(--text-muted);">Positions shuffle</div>
             </div>
-            <div id="stat-best-medium" style="font-family: var(--font-serif); font-size: 1.3rem; font-weight: 700;">—</div>
+            <div id="stat-best-medium" style="font-family: var(--font-numbers); font-size: 1.25rem; font-weight: 700;">—</div>
           </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 4px; border: 1px solid var(--border-subtle);">
+          <!-- Classic Hard -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(0,0,0,0.03); border-radius: 4px; border: 1px solid var(--border-subtle);">
             <div>
-              <strong style="color: var(--color-hard);">HARD</strong>
+              <strong style="color: var(--color-hard);">HARD (1–100)</strong>
               <div style="font-size: 0.78rem; color: var(--text-muted);">Shuffles + rotation</div>
             </div>
-            <div id="stat-best-hard" style="font-family: var(--font-serif); font-size: 1.3rem; font-weight: 700;">—</div>
+            <div id="stat-best-hard" style="font-family: var(--font-numbers); font-size: 1.25rem; font-weight: 700;">—</div>
           </div>
         </div>
 

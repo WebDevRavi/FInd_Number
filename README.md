@@ -1,27 +1,48 @@
-# Find the Number (FInd_Number)
+# Find the Number (FInd_Number) — v2.0
 
-A tactile, minimalist number search web game. Players find numbers in sequential order (1 to 20, 1 to 50, or 1 to 100) with dynamic shuffles, audio feedback, and clean editorial visuals.
+A tactile, minimalist number search web game built for desktop and mobile web. Players find numbers in sequential order (1 to 20, 1 to 50, 1 to 100, or through 20 curated campaign stages) with dynamic shuffles, audio feedback, tactile animations, and clean editorial visuals.
 
-Built with pure vanilla HTML5, CSS3, and modern JavaScript (ES Modules).
+Built with pure vanilla HTML5, CSS3, and modern ES Modules with **zero runtime dependencies**.
 
 ---
 
-## Features
+## What's New in v2.0 (CrazyGames Launch Edition)
 
-- **Modes & Difficulties**:
-  - **Easy**: 1 to 20 numbers, relaxed timer.
-  - **Medium**: 1 to 50 numbers, balanced speed.
-  - **Hard**: 1 to 100 numbers, intense tactical search.
-- **Themes**:
-  - **Dark Mode**: Charcoal chalkboard with chalk aesthetic.
-  - **Light Mode**: Warm editorial paper and ink aesthetic.
-- **Procedural Web Audio**:
-  - High-performance, zero-dependency sound effects and ambient music synthesized via the Web Audio API.
-- **Platform Ready**:
-  - Native integration with the **CrazyGames SDK v3** (gameplay start/stop, happy-time events, rewarded hints, banners).
-  - Robust offline fallback to `localStorage` when running outside the platform.
-- **Responsive Layout**:
-  - Fully adaptive interface optimized for mobile and desktop screens with safe-area insets.
+### 1. 20-Level Campaign Progression
+- **20 Handcrafted Levels** with progressive difficulty curves.
+- Escalating mechanics:
+  - **Fixed Numbers** (Levels 1–4)
+  - **Dynamic Shuffling** on tap (Levels 5–9)
+  - **Rotational Drift & Disorientation** (Levels 10–14)
+  - **Grandmaster Combinations** up to 80 numbers (Levels 15–20)
+- **Generous & Satisfying 3-Star System**: Balanced thresholds tuned for human scan speed and board shuffle delays so high performance is genuinely rewarded with 3 stars.
+- **HUD Star Tracker**: Both Desktop and Mobile HUDs display active 3★ target time (e.g., `3★ < 22s`) in real time during the round.
+
+### 2. Daily Challenge & Streak System
+- Generates a unique, deterministic daily number puzzle refreshed every 24 hours based on the local calendar date.
+- **Streak Tracking**: Encourages Day-1 and multi-day retention with streak counters (`🔥 X Days`) saved in persistent storage.
+- Direct quick-launch hero card on the main menu.
+
+### 3. Tactile Juice & Game Feel
+- **60 FPS Canvas Confetti System**: Dynamic multi-colored confetti particles explode on 3-star campaign clears and record-breaking runs.
+- **Wrong-Tap Visual & Haptic Feedback**: Tapping an incorrect number triggers an immediate localized red-shake animation on the tile, a subtle container screen-shake, and mobile vibration (`navigator.vibrate(50)`).
+- **Record Fanfare**: Breaking a personal best triggers an arpeggiated major-chord audio fanfare and displays an emerald-pulsing `NEW BEST!` badge.
+- **Combo Multipliers**: Sequential taps within 1.2s build a combo counter accompanied by rising pitch audio notes.
+
+### 4. Comprehensive Personal Bests & Stats Modal
+- Live stats modal tracking:
+  - **Campaign Stars**: Total stars earned (e.g., `15 / 60 ⭐`) and current highest unlocked stage.
+  - **Daily Streak**: Current active streak and today's completion status.
+  - **Classic Bests**: Formatted personal records across Easy (1–20), Medium (1–50), and Hard (1–100).
+
+### 5. CrazyGames SDK v3 Integration
+- Seamless lifecycle management:
+  - `gameplayStart()` called on first tile tap or countdown complete.
+  - `gameplayStop()` called on round completion or pause.
+  - `happyTime()` fired on 3-star level wins, record times, and daily completions.
+  - Rewarded video ad integration for free in-game hints.
+  - Responsive banner ads with dedicated containers.
+  - Automatic fallback to `localStorage` when testing offline or running outside CrazyGames.
 
 ---
 
@@ -35,20 +56,20 @@ Built with pure vanilla HTML5, CSS3, and modern JavaScript (ES Modules).
 ├── css/
 │   ├── main.css        # Design tokens, theme variables, base styling
 │   ├── ui.css          # Screens, headers, modal dialogs, buttons
-│   ├── board.css       # Number grid layout & bubble animations
+│   ├── board.css       # Number grid layout, shake animations & bubbles
 │   └── responsive.css  # Mobile and desktop responsive scaling
 ├── js/
-│   ├── main.js         # Game coordinator & screen controller
-│   ├── board.js        # Board generator & collision/click detection
-│   ├── audio.js        # Web Audio API procedural synthesizer
-│   ├── config.js       # Game tuning & difficulty settings
+│   ├── main.js         # Game coordinator, HUD updates & screen controller
+│   ├── board.js        # Board generator, layout math & tactile interaction
+│   ├── audio.js        # Procedural Web Audio API sound synthesizer & fanfare
+│   ├── config.js       # Game tuning, campaign stages & 3-star thresholds
 │   ├── platform.js     # CrazyGames SDK v3 adapter & fallbacks
 │   ├── state.js        # Reactive game session state
-│   ├── storage.js      # Local persistence for scores & settings
+│   ├── storage.js      # Local persistence for scores, stars & daily streak
 │   ├── strings.js      # Game UI labels and copy
 │   ├── target-circle.js# Visual target indicator component
 │   └── timer.js        # Millisecond-precision timer logic
-└── img/                # Essential UI runtime assets (icons, logo, backgrounds)
+└── img/                # UI assets (trophy, home hero, icons, backgrounds)
 ```
 
 ---
